@@ -1,0 +1,782 @@
+<html>
+	<head>
+		<title>SEPIA Manual</title>
+		<style>
+			.definition {
+				padding-left: 2em;
+				display: block;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>SEPIA Manual</h1>
+		<h4>version 1.05c</h4>
+		<hr/>
+		<h2>Table of Contents</h2>
+		<ol>
+			<li><a href="#Introduction">Introduction</a></li>
+			<li><a href="#Revisions">Revision History</a></li>
+			<li><a href="#Run">How to Run</a></li>
+			<li><a href="#Config">Configuration</a>
+			<li><a href="#VisualAgent">Visual Agent and Unit Overview</a>
+			<li><a href="#Agent">Writing An Agent</a>
+			<ol>
+				<li><a href="#AgentSimulation">Running Look-Ahead/Simulations</a></li>
+			</ol>
+			<li><a href="#FogofWar">Making Maps</a>
+			<li><a href="#ScripAgent">Using The Scripted Agent</a>
+			<li><a href="#Engine">The Engine</a>
+			<li><a href="#FogofWar">Partial Observability</a>
+			<li><a href="#Matlab">MATLAB-Specific Notes</a>
+			<li><a href="#Contact">Contact Info</a></li>
+		</ol>
+		<h2 id="Introduction">1. Introduction</h2>
+		<p>SEPIA, the Simulation Engine for Programming Intelligent Agents,
+		is an open source project developed by Tim Ernsberger, 
+		Scott Sosnowski, and Feng Cao, under the advisement of Soumya Ray.
+		The purpose of this project is to provide a dedicated testbed 
+		for use in testing artificially intelligent agents. Sepia
+		is based on <a href="http://stratagus.sourceforge.net/">Stratagus</a>, with units
+		 and dynamics based on Blizzard's Warcraft 2.  Unlike these games, however, Sepia 
+		 was designed from the ground up to be used by programs, not people.  Because of this, 
+		 it enshrines agents as a core feature of its architecture, with no audio and stripped-down visuals.
+		 Because it is built with agents in mind instead of having the an API injected as an afterthought,
+		 the agents interact directly with the code, with the convenience and speed enhancements that entails.
+		 This makes it an ideal platform for running large numbers of simulations quickly.
+		 It also means that all state and logging information is available to the agent.
+		</p>
+		<h2 id="Revisions">2. Revision History</h2>
+		<h4>x.x.x</h4>
+		<p>This is some version of Sepia. New versions will be published
+		   as bugs are resolved and as additional features are added.
+		</p>
+		<h2 id="Run">3. How to Run</h2>
+		<p>Note: this section describes how to run Sepia from a Jar file. If you wish to
+		   use the source code, you will have to figure that out on your own (Using eclipse may be of great assistance for those with access to the source).
+		   If you wish to run via MATLAB, please refer to the <a href="#Matlab">MATLAB section</a>.
+		</p>
+		<p>Before you run Sepia, you need to decide what you want to run.  The following examples will use
+		agents and maps from both inside and outside the jar.  As a general rule, however, always specify the path to items in the jar as precisely as possible.
+		</p>
+		<h3>Compiling your Agent</h3>
+		<p>To compile your agent, be sure to include the jar in the classpath, via something like this:
+		</p>
+		<code>javac -cp 'Sepia.jar;.' NonJarAgent.java</code>
+		<h3>An Example Command Prompt</h3>
+		<p>
+		Once you have compiled your agent (or if you want to use only the included agents),
+		 you will want to run the program.  This is accomplished via the versatile main method
+		  included.  The following should get you started (as run from the root sepia directory):
+		</p>
+		<code>java -cp Sepia.jar edu.cwru.sepia.Main2 data/exampleLaunchConfig.xml</code>
+		<p>
+			See <a href="#Config">configuration</a> for details on altering the configuration and making your own.
+		</p>
+		<h3>More Examples</h3>
+		<p>Another important agent is the CombatAgent, which is a basic fighting AI.  When the combat agent is controlling them, each unit sits around (or wanders) until an enemy comes into it's sight range, at which point it mindlessly attacks that enemy until one dies.
+		The combat agent takes three additional parameters:
+		<ul>
+			<li>A space separated list of enemy player numbers (for example if this is '--agentparam "0 1 3"', then the Combat agent will attack players 0,1, and 3)</li>
+			<li>A boolean for whether it's units should wander while waiting to see enemies</li>
+			<li>A boolean for whether it should produce verbose output into System.out</li>
+		</ul>
+		</p>
+		<p>
+			Thus, an example trial involving CombatAgent (with a visual agent to watch) could be started like so:
+		</p>
+		<code>java -cp Sepia.jar edu.cwru.sepia.Main --config data/conquestConfig.xml data/durcom_4f4a2kv4f4a2k.xml --agent edu.cwru.sepia.agent.CombatAgent 0 --agentparam "1" --agentparam true --agentparam false --agent edu.cwru.sepia.agent.CombatAgent 1 --agentparam "0" --agentparam true --agentparam false --agent edu.cwru.sepia.agent.visual.VisualAgent 0 --agentparam false --agentparam true</code>
+		<p>
+			Notice that each specifies the other as its enemy.  This will invoke the main() method in edu.cwru.sepia.Main. It uses the configuration data in data/conquestConfig.xml (a fight to the death).  It uses the map stored in data/durcom_4f4a2kv4f4a2k.xml, a 10 unit v 10 unit matchup with a variety of units.  It initiates a CombatAgent with player number 0, which has as it's enemy the player with number 1 (first arg), which orders its units to wander (second arg), and which is not verbose (third arg)
+		It also initializes another CombatAgent (player number 1 with enemies 0) a visual agent (also with the player number 0), that isn't controllable by you (the first agentparam),
+			and which will give you information if you double click (the second agentparam).
+			Note that the visual agent shares the same player number as the first agent.  If fog of war were enabled,
+			it would be clear that sharing the same player number gives the visual agent a view of the same player's units.
+		 	Trying to initialize an agent with a playernumber that does not exist in the map will lead to errors.
+		 	See <a href="#Config">configuration</a> for more details.
+		</p>
+		
+		<h2 id="Config">4. Configuration </h2>
+		<h3>Main2 and it's configuration</h3>
+		<p>
+		edu.cwru.sepia.Main2 takes a single argument, a full configuration file.
+		</p>
+		This configuration file is an xml file with &lt;Configuration&gt; as the root directory.
+		It structure is:
+		<div><code>&lt;Configuration&gt;</code>
+		<div>
+		<div>Map has text containing the map file</div>
+		</div>
+		</div>
+		<div><code>&lt;Configuration&gt;</code></i>
+			<div class="definition">
+			<code>&lt;Map&gt;<i>filename</i>&lt;/Map&gt;</code>
+				
+			</div>
+			<div class="definition">
+			There can be many players <br>
+			<code>&lt;Player Id="<i>playernumber</i>"&gt;</code>
+				<div class="definition">
+				<code>&lt;AgentClass&gt;</code>
+					<div class="definition">
+					<code>&lt;ClassName&gt;<i>fullyqualifiedagentname</i>&lt;/ClassName&gt;</code>
+					</div>
+					Each agent may have many or no arguments.  These arguments are put into a string array as arguments to the constructor, which is called via java's reflection capabilities<br>
+					<div class="definition">
+					<code>&lt;Argument&gt;<i>argumenttext</i>&lt;/Argument&gt;</code>
+					</div>
+				</div>
+			</div>
+			<div class="definition">
+			<code>&lt;ModelParameters"&gt;</code>
+				These represent the termination conditions<br>
+				<div class="definition">
+				<code>&lt;Conquest"&gt;<i>isconquest</i>&lt;/Conquest"&gt;</code>
+					<div class="definition">
+					A boolean value representing whether the victory condition is by killing units from all other players.
+					</div>
+				</div>
+				<div class="definition">
+				<code>&lt;Midas"&gt;<i>ismidas</i>&lt;/Midas"&gt;</code>
+					<div class="definition">
+					A boolean value representing whether the victory condition is by gathering resources
+					</div>
+				</div>
+				<div class="definition">
+				<code>&lt;ManifestDestiny"&gt;<i>ismanifestdestiny</i>&lt;/ManifestDestiny"&gt;</code>
+					<div class="definition">
+					A boolean value representing whether the victory condition is by building structures
+					</div>
+				</div>
+				<div class="definition">
+				<code>&lt;TimeLimit"&gt;<i>timelimit</i>&lt;/TimeLimit"&gt;</code>
+					<div class="definition">
+					An integer representing the number of rounds until it terminates despite no victory conditions being met
+					</div>
+				</div>
+			<div>
+			<code>&lt;Runner"&gt;</code>
+				These represent the termination conditions<br>
+				<div class="definition">
+				<code>&lt;RunnerClass"&gt;<i>fullyqualifiedrunnername</i>&lt;/RunnerClass"&gt;</code>
+					<div class="definition">
+						The runner launches and controls episodes, it is expected that users doing extensive work will use modified Runners of their own devising.
+					</div>
+				</div>
+				
+				<div class="definition">
+				A runner may have any number of key,value pairs (or, to be more exact, Name,Value pairs), representing additional parameters that control the experiment or be passed through it to the model itself.<br>
+				<code>&lt;Parameter" Name="<i>key</i>>" Value="<i>value</i>"&gt;</code>
+				<div class="definition">
+					The parameters represent certain expected arguments that may not be shared amongst all (for instance) models or runners.  They are designed to provide extensibility, allowing the designer of a runner to pass whatever parameters are needed.
+				</div>
+			</div>
+		</div>
+		</div>
+		<h3>Main and its configuration</h3>
+		<p>Here is a further description of all the options that can be used (Entering in insufficient
+		   or incorrect arguments will cause the program to print out usage info and
+		   terminate):
+		</p>
+		<div><code>--config <i>&lt;XML configuration file&gt;</code></i>
+			<div class="definition">These two arguments specify that you want to import
+			    a configuration and which file to read to get it. This is an optional
+			    parameter. If not specified, the program will use the last configuration
+			    with which it was run or default values if no configuration data has been
+			    provided previously.  More info in <a href="#Config">section 4</a>.
+			</div>
+		</div>
+		<div><code>--agent <i>&lt;agent class&gt; &lt;playernum&gt;</i></code>
+			<div class="definition">Indicates that the agent defined by 
+			    <i>&lt;agent class&gt;</i> should be used in this simulation. The full
+			    path to the class must be specified (e.g. edu.cwru.sepia.SimpleAgent1).
+			    By default, the program will use a single argument constructor that takes
+			    in an int that represents playernum. The <i>&lt;playernum&gt;</i> parameter 
+			    definies an ID with which the agent will be associated. 
+			    <strong>At least one instance of this option is required.</strong>
+			</div>
+		</div>
+		<div><code>--agentparam <i>&lt;string param&gt;</i></code>
+			<div class="definition">Follows an --agent, allowing complex classes to have additional
+			parameters.  Each is a string.
+			</div>
+		</div>
+		<div><code>--loadfrom <i>&lt;serialized agent file name&gt;</i></code>
+			<div class="definition">This option can only be used immediately following
+			    the previous option. If used, the agent specified by the preceeding 
+			    --agent option will be loaded from the file instead of being constructed.
+			    This option assumes that the data in the file is a serialized representation
+			    of an agent. 			    
+			</div> 
+		</div>
+		<p>The configuration file is used to define victory/termination conditions and set up parameters for the
+		   series of episodes you are running.  It is an XML file that gets loaded as if it were an
+		   instance of <a href="http://download.oracle.com/javase/6/docs/api/java/util/prefs/Preferences.html">
+		   java.util.Preferences</a>. Basically, the configuration file is a hierarchy of
+		   maps which store primitives as values. For an example of how to write a configuration
+		   file, see <a href="../data.defaultConfig.xml">data/defaultConfig.xml</a>.  Here are the values that Sepia
+		   uses and their defaults:
+		</p>
+		<p> Note that with the exception of the time limit, all victory conditions are additive, you must meet all of them to win. 
+		</p>
+		<ul>
+			<li>edu
+				<ul>
+					<li>cwru
+						<ul>
+							<li>sepia
+								<ul>
+									<li>environment
+										<ul>
+											<li><strong>NumEpisodes</strong> - the number of episodes to run (default 1)</li>
+											<li><strong>EpisodesPerSave</strong> - how often to save the terminal state and agents (default 0, i.e. never), 1 will save every episode, 2 after every other one</li>
+											<li><strong>SaveAgents</strong> - whether to save the agents periodically (only applies if EpisodesPerSave > 0; default false)</li>
+										</ul>
+									</li>
+									<li>model
+										<ul>
+											<li><strong>Conquest</strong> - Military Victory: agents must eliminate all other agents to win (default false)</li>
+											<li><strong>Midas</strong> - Economic Victory: agents must gather RequiredGold and RequiredWood amounts of gold and wood to win (default false)</li>
+											<li><strong>ManifestDestiny</strong> - Building Victory: agents must build specified quantities of units to win (default false)</li>
+											<li><strong>TimeLimit</strong> - agents must complete other goals within this amount of turns to win (default Integer.MAX_VALUE)</li>
+											<li><strong>RequiredGold</strong> - amount of gold required for Midas victory (default 0)</li>
+											<li><strong>RequiredWood</strong> - amount of wood required for Midas victory (default 0)</li>
+											<li><strong>Required <i>unitTemplateName</i> Player <i>playerId</i></strong> - number of instances of <i>unitTemplateName</i> required for the <i>playerId</i>th agent to win by ManifestDestiny (default 0)</li>
+										</ul>	
+								</ul>
+							</li>
+						</ul>
+					</li>
+				</ul>
+			</li>
+		</ul>
+		<p>You can use the configuration file to define	parameters for your own agent 
+			(e.g. learning rate, discount factor, etc.). Just define your own path, figure out 
+			how to use java.util.Preferences, and put your settings in the configuration file.
+		</p>
+		<h2 id="VisualAgent">5. Visual Agent and Game Details</h2>
+		<p>
+		Sepia comes with a visual agent.  This agent allows users to see what is going on and what their agents are doing.  Simply declare a visual agent with the same playernumber as your agent (more info in the How to Run section), and you will be able to see everything that the agent sees.  Once there you will be able to see gold mines (gold squares), trees (tree shaped things), as well as letters in different colors.  The color of these letters represents the player number, while the letter shows what type of unit they are. 
+		</p>
+		<ul>
+			<li>Buildings
+				<ul>
+					<li>H: Town Hall.  This building makes peasants and acts as a drop-off point for resources. It also provides some food, which allows more units to be made.</li>
+					<li>F: Farm. This building provides food to allow more units to be made.</li>
+					<li>B: Barracks.  This building trains troops, including footmen, archers, and knights.</li>
+					<li>L: Blacksmith.  This building makes upgrades, improving the combat effectiveness of the troops.</li>
+				</ul>
+			</li>
+			<li>Units
+				<ul>
+					<li>p: Peasant. The builder and gatherer.  Not an effective combat unit.</li>
+					<li>f: Footman. A basic melee combat unit.</li>
+					<li>a: Archer.  A ranged combat unit, more lethal than the footman, but more deadly.</li>
+					<li>k: Knight.  A heavier armored and more powerful melee combat unit than the footman.</li>
+				</ul>
+			</li>
+		</ul>
+		<p>
+			For more detailed information or to make changes, see data/unit_templates.
+		</p>
+		<h2 id="Agent">6. Writing an Agent</h2>
+		<p>All agents written to interact with Sepia must extend the class
+		    <code>edu.cwru.sepia.agent.Agent</code>. Consult the <a href="../javadocs/edu/cwru/sepia/agent/Agent.html">Agent javadoc</a> for a
+			description of the methods. At the very least, you must implement
+			the initialStep(), middleStep(), and terminalStep() methods. These three
+			methods define the logic for the agent to receive a state update and return
+			a mapping of its units to actions for the next step.
+		</p>
+		<p>When making more complicated agents, you may want to add additional arguments.  In order to use more arguments with the existing main method, you must change your agent's constructor to accept a string array.  In particular, the constructor must have exactly two arguments: int player, and String[] everythingelse (which you then parse into whatever).
+		If it does not match this (or just "int playernum"), it will not be loaded by the main method.  In order to pass the arguments in, each is put sequentially as --agentparam x.  More details in the How To Run section.
+		If you do add additional parameters, please override the static String getUsage() to explain their usage, as that will be called if it is used wrong.
+		</p>
+		<h3 id="StateHist">Accessing The State/History</h3>
+		<p>
+			The values recorded within the model are passed through the agents in the parameters to the initialStep, middleStep, and terminalStep.  It comes in the form of the two provided parameters: the <a href="../javadocs/edu/cwru/sepia/environment/model/state/State.StateView.html">StateView</a> and the <a href="../javadocs/edu/cwru/sepia/environment/model/history/History.HistoryView.html">HistoryView</a>.  Each is an immutable and permanent view of a part of the model for the beginning of that turn.
+			<h4 id="State" >The State</h4>
+			<br>The StateView provides information on the present state of the model, whereas the HistoryView tells the agent how it got there.  There are many methods and the <a href="../javadocs/edu/cwru/sepia/environment/model/state/State.StateView.html">javadoc</a> is recommended.  These methods range from utility methods like getCurrentTurn(), the getAll_____[Id]s() set of methods to get full lists of such things as units, templates, resource nodes, and upgrades; the related get____[Id]s(playerNumber); navigation enablers like the [has]____At(x,y) to check for collisions or inBounds(x,y); player resource amounts with getResourceAmount(playerId, ResourceType) and the more complex supply methods; as well as the more arcane getClosestOpenPosition(x,y) which is to simplify high level agents choosing building placement. Another important method is getStateCreator(), which (if the state is fully observable) returns a <a href="../javadocs/edu/cwru/sepia/environment/model/state/StateCreator.html">StateCreator</a> object that can create independant, mutable copies of the underlying state, for use in simulation. 
+			<h4 id="History" >The History</h4>
+			The history represents a complete history of the object, and thus most methods are parameterized with a step number.  This stepNumber will generally be set with the state's getTurnNumber() - 1 (as the turn number is the current turn, and you generally want to know what happened in the last turn).
+			<br>The history provides important feedback through the various action feedback mechanisms.  These logs include a commandsIssued(playerNumber, turnNumber), 
+			which track which actions were sent that turn in the map that the agents return; commandFeedback(playerNumber, turnNumber), which gives the feedback for all
+			commands which are still ongoing (IE, primitive actions from that turn or compound actions from that turn or before that haven't completed);
+			and getPrimitiveFeedback(playerNumber, turnNumber), which gives the feedback for each of the primitive actions that make up a compound action.  This will be the same as commandFeedback if and only if the commands issued are primitive actions themselves.  For compound actions, the unit number can be used to cross reference the compound and primitive actions, and there will often be several primitives that reach a completed status while the compound reaches it once.
+			
+			Feedback takes the form of an enum, indicating such stages as completion, incomplete, failed, and a few unusual fail conditions (see the  <a href="../javadocs/edu/cwru/sepia/action/ActionFeedback.html">javadoc</a> for details)
+			The feedback methods are the best way of verifying when an action you have sent is successful or failed, to help keep track of the activity of units. 
+			<br>The history also has a variety of logs (such as getDamageLog(turnNumber), getBirthLog(turnNumber), etc).  These logs mark significant events, and may be useful for assigning rewards.
+			<br>Most agents will want to monitor the birth and death logs to keep a running tally of the available units.  When the agents take sequential turns, this requires an agent to remember the last turn number that it acted on and loop over the logs for all turns that have elapsed since then. 
+		</p>
+		<h3 id="Actions">Actions</h3>
+		<p>In order to send commands to your units, you must construct a <code>java.util.Map</code> from the IDs of your units to the actions that you want them to do.  This Map from Integer to Action is the return value for both the initialStep and middleStep methods (the terminalStep is purely information about the final step, so no actions need to be sent).
+		Actions may be constructed by calling various static factory methods in <code>edu.cwru.sepia.action.Action</code>, such as <code>createCompoundAttack</code>.
+		The actions are divided into two groups, primitive actions and compound actions.  The primitive actions represent basic commands to individual units, whereas the compound actions are higher level, requesting a series of primitive actions over the course of several turns as part of a larger command.
+		There are 14 possible action types, described below:
+		<ul>
+			<li>
+				PRIMITIVEATTACK: This is a TargetedAction, taking as parameters the acting unit's ID and the target's ID.  When executed, it attempts to attack the targeted unit, failing when it out of range.
+			</li>
+			<li>
+				PRIMITIVEGATHER: This is a DirectedAction, taking as parameters the acting unit's ID and a direction to attempt to gather in.  When executed, it looks in the specified direction for a resource node, if there is a node, it moves resources from the node into the unit's inventory.
+			</li>
+			<li>
+				PRIMITIVEDEPOSIT: This is a DirectedAction, taking as parameters the acting unit's ID and a direction to attempt to deposit in.  When executed, it looks in the specified direction for a town hall, if there is a town hall that you control, it moves resources from the unit's inventory and gives them to you.
+			</li>
+			<li>
+				PRIMITIVEMOVE: This is a DirectedAction, taking as parameters the acting unit's ID and a direction to attempt to move.  When executed, it attempts to move in that direction, failing if another unit is already there.
+			</li>
+			<li>
+				PRIMITIVEBUILD: This is a ProductionAction, taking as parameters the acting unit's ID and the ID of the template of the building that you are trying to build.  When executed, it does one turn's work toward building that kind of building on the spot the unit is at.  As all buildings take one turn to build, this is enough to complete it, making a building on the spot and moving the builder off to one side.
+			</li>
+			<li>
+				PRIMITIVEPRODUCE: This is a ProductionAction, taking as parameters the acting unit's ID and the ID of the template of the unit or upgrade that you are trying to build.  When executed, it does one turn's work toward the creation of the unit or upgrade specified.  As all units and upgrades take one turn to make, this is enough to complete it.  If it is a unit being made, the new unit is put to one side after being made.
+			</li>
+			<li>
+				COMPOUNDATTACK: This is a TargetedAction, taking as parameters the acting unit's ID and the target's ID.  When executed, it moves into range of a unit, then attacks it once.
+			</li>
+			<li>
+				COMPOUNDGATHER: This is a TargetedAction, taking as parameters the acting unit's ID and the ID of a resource node to gather from.  When executed, it does PRIMITIVEMOVEs until next to the specified node, then performs a PRIMITIVEGATHER on it.
+			</li>
+			<li>
+				COMPOUNDDEPOSIT: This is a TargetedAction, taking as parameters the acting unit's ID and the ID of a town hall to deposit at.  When executed, it does PRIMITIVEMOVEs until next to the specified town hall, then performs a PRIMITIVEDEPOSIT on it.
+			</li>
+			<li>
+				COMPOUNDMOVE: This is a LocatedAction, taking as parameters the acting unit's ID and the x and y coordinates of where to move.  When executed, it does PRIMITIVEMOVEs to reach that location.
+			</li>
+			<li>
+				COMPOUNDBUILD: This is a LocatedProductionAction, taking as parameters the acting unit's ID and the ID of the template of the building that you are trying to build, as well as x and y coordinates of where to build it.  When executed, it uses repeated PRIMITIVEMOVEs to reach the specified location, then does PRIMITIVEBUILD until the building is done. 
+			</li>
+			<li>
+				COMPOUNDPRODUCE: This is a ProductionAction, taking as parameters the acting unit's ID and the ID of the template of the unit or upgrade that you are trying to build.  When executed, it does PRIMITIVEPRODUCE until the unit or upgrade is completed.
+			</li>
+			<li>
+				FAILED and FAILEDPERMANENTLY: These are internal actions used by the planner in executing the compound actions.
+			</li>
+		</ul>		
+		</p>
+		<h3 id="AgentSimulation">Running Look-Ahead/Simulations</h3>
+		<p>
+			A simulation may need to be run for purposes of replaying a previous game for viewing or further learning or as a lookahead method in planning.<br/>
+			This can be done by interacting directly with the model, taking the place of the environment.
+			<code>//Written 4/13/2012
+				//Methods of getting a simulated state
+					//If you are doing lookahead
+					StateCreator stateCreator = stateView.getStateCreator();
+					//Loading from serialization to rerun previous events:
+					  //via normal serialization
+					StateCreator stateCreator = new LoadingStateCreator();
+					  //via xml serialization
+					StateCreator stateCreator = new XmlStateCreator(); 
+			</code>
+			The lookahead is not effective in partial observability.  While the getStateCreator method shown above may give the currently visible units and templates, an agent that has been paying attention will likely be able to do far better.  For this reason, it is advised that the edu.cwru.sepia.enviroment.model.state.State.StateBuilder be used to either manually construct states or to track them as they change.
+		 
+		</p>
+		<h2 id="MapEditor">7. Making your own Map</h2>
+		<p>
+		Sepia is also equipped with a map editor, located in <code>edu.cwru.sepia.agent.visual.editor.Editor</code>.
+		  It has a main method and is therefore executable.
+		  It consists of two linked windows, the game screen and the editing tools.
+		  The game screen, which is shared with  shows the grid of the world and the units and resources you have placed on the map.
+		  The editing tools allow you to add players (it only starts with one player) and to place and remove units or resource nodes from the map.
+		  Resource nodes are placed by selecting the tree or mine radio buttons and putting in a number in the resource amount text field, then clicking the location on the game screen at which you want to place the resource node.
+		  Units are similarly placed by selecting the radio button marked "unit" and selecting the type of unit and the player number from dropdown lists, then clicking the location on the game screen to place the unit.
+		  You may remove either units or resource nodes with the remove radio button selected by clicking on them.
+		  The size of the map may be altered by a pair of text fields and the "Set Size" button, although shrinking the map may cause units near the edge to be deleted as appropriate.
+		  Large maps may be navigated using the arrow keys.
+		  It is also possible to toggle the status of fog of war and whether resources are revealed through the EventLogger.  Note
+		    that while the setting of revealed resources is visible on the screen, the fog of war is not (as it would make it hard to edit if you can't see things).
+		    (more info on these <a href="#FogofWar">here</a>).
+		    
+	    </p>
+		<p>As of version 3.1, you may not change templates, put in upgrades, give resources to players, or change unit or resource node attributes after having placed them.
+		</p>  
+		<h2 id="Agent">8. Using the Scripted Agent</h2>
+		<p>The scripted agent may be found at <code>edu.cwru.sepia.agent.ScriptedGoalAgent</code>.
+			It's constructor requires a BufferedReader, which may be connected to a file, the standard in, or a string (via calling <code>java.io.BufferedReader</code>'s constructor with an argument of a <code>java.io.FileReader</code>, <code>java.io.InputStreamReader</code>, or <code>java.io.StringReader</code>, respectively).
+			The input must be in the form of a series of commands separated by new lines.
+			The commands are executed sequentially, with execution waiting on any command 
+			whose preconditions are not met.  If multiple commands can be executed during
+			the same time step, they will be.  Commands may be suffixed by // followed by 
+			a comment, but there should be no spaces before the //.	The command sequence
+			 may be terminated with a line saying containing only "END" (but not including
+			 the quotation marks).  This is not necessary unless the command sequence comes
+			  from standard in.
+			<br> <br>
+			The script may take actions of Transfer, Build, Produce, Wait, and Attack.  These 
+			commands are put in with their arguments separated by colons. <br>
+			Transfer changes the jobs of a selected number of peasants from one selected task to
+			another selected task. The tasks available are Wood, Gold, and Idle<br>
+			As an example, "Transfer:1:Idle:Gold" takes 1 peasant and reassigns it to gold mining.
+			<br>
+			Build uses an idle peasant to build a selected building type in roughly a selected 
+			position.  This position is relative to the average position of units at the start
+			of each episode.  If that position is occupied, it will find the closest unoccupied
+			position and build there.  If no peasant that can build the building is idle and not
+			doing other building, then the command will not be executed until there is one, so it is
+			advised that Transfer be used first to make a peasant idle.<br>
+			As an example, "Build:Farm:-2:2" builds a farm at a position offset from the starting point
+			by -2 in the x direction and +2 in the y direction.<br>
+			<br>
+			Produce uses a building able to produce a selected unit type.  If no building is both capable
+			of producing that unit and is not already producing something, then the command will not be executed
+			until one is available.<br>
+			As an example, "Produce:Peasant" orders that a town hall make a peasant. <br>
+			<br>
+			Wait allows execution to wait a selected resources reaches a selected amount.  While
+			Produce and Build do this automatically, it can be useful to wait until resources accrue
+			before Transferring a peasant from that resource to Idle, so that it can be used to build. <br>
+			As an example, "Wait:Gold:400" waits until you have a total of 400 gold.<br>
+			<br>
+			Attack sends all military units to attack the enemy.  The attack walks toward the enemy town hall 
+			(or lacking a town hall, some other enemy unit) and attacks that gets in range on the way. Attack:All
+			does the same thing with everything, including peasants. 
+			As an example, "Attack" attacks with military units, "Attack:All" does the same with every unit.<br>
+			<br>
+			Note on usage: Many commands have preconditions that are difficult to satisfy, so take
+			care choosing commands in your script and note that the scripted agent is not robust in
+			the face of interference (such as destroying production buildings).<br>
+			<br>
+			Finally, as a full example of a working script:<br>
+			Build:TownHall:0:0//use your starting peasant to build a town hall<br>
+			Transfer:1:Idle:Gold//make the builder gather gold<br>
+			Wait:Gold:500//wait until you have enough gold for a farm<br>
+			Transfer:1:Gold:Wood//make him gather wood<br>
+			Wait:Wood:250//until you have enough wood too<br>
+			Transfer:1:Wood:Idle//then free him up<br>
+			Build:Farm:-2:2//make him build a farm<br>
+			Transfer:1:Idle:Gold//make him go back to gold<br>
+			Produce:Peasant//make a peasant when you can<br>
+			Transfer:1:Idle:Wood//and put the new guy on woodcutting<br>
+			Produce:Peasant//make another peasant when you can<br>
+			Transfer:1:Idle:Gold//and put the new guy on gold<br>
+			Produce:Peasant//and make another<br>
+			Transfer:1:Idle:Gold//and put that one on gold too<br>
+			Wait:Wood:400//when you have enough wood for a barracks<br>
+			Transfer:1:Wood:Idle//free up the woodcutter to build<br>
+			Build:Barracks:2:-2//build a barracks<br>
+			Transfer:1:Idle:Gold//make the builder go to gold<br>
+			Produce:Footman//make a footman<br>
+			Attack:All<br>
+			
+		</p>
+		<h2 id="Engine">9. The Engine</h2>
+		<p>The top level of the engine is the <code>edu.cwru.sepia.environment.Environment</code>.  The Environment interacts with the agents through immutable methods within the abstract class <code>edu.cwru.sepia.agent.Agent</code>.  Environment provides the Agent with states, then receives actions back. 
+		</p>
+		<p>
+		The Environment verifies the orders and passes them on to the Model.  Model is the center of the interpretation of orders.  As implemented in SimpleModel, it takes in all of the orders.  Any compound actions are processed within SimplePlanner, which calculates pathing and breaks down the compound commands into a series of primitive ones.  The primitive commands making up compound commands are queued, and recalculated upon failure.  Thus, a compound command need not be reissued, although in some cases (long moves across a crowded area that became less crowded during the course of the movement) it may result in slightly better pathing.  There is presently no direct way of definitively determining that an action has been completed successfully or not, but the task of a unit being idle may be an alternative to checking postconditions manually. Actions are then executed, leaving effects in the State.
+		</p>
+		<p>
+		The State and other items accessible from the state collectively store virtually all information about the world and what has happened.
+		Information accessible from the state includes resources amounts, resource nodes, units, and logs of important events.
+		Most information is accessed through IDs, which can also be found in State.
+		The State is accessed by agents through the StateView class, which is a read-only version of the state, giving read-only versions of some of its components as well.
+		</p>
+		<p>
+		Accessed through State, other important classes include:<br>
+		Unit, which stores information about where a unit is, how healthy it is, what it is carrying, et cetera.<br>
+		UnitTemplate, which stores key information about a unit type, like range, attack, armor, whether it can build things, etc.  It can be accessed from a unit of that type (with getTemplate/getTemplateView or from State via it's name and the player)<br>
+		</p>
+		<p> Action is used to convey commands between the agent and the simulation.  There are several subclasses, to prevent mistakes, they should be constructed using the static factory-style methods in Action itself.  Actions are divided into compound and primitive types.  Primitive types are the basic building blocks, like taking a step in one direction, gathering from an adjacent resource, or attacking a guy in range.  Compound actions are more goal based and are resolved by the simulator itself into the primitives needed to fulfill that goal.  As a result, compound actions are more robust, being self correcting to a point.  
+		</p>
+		<h2 id="FogofWar">10. Partial Observability</h2>
+		<p>Sepia implements partial observability through the common RTS element of "fog of war".  
+		Fog of war may be activated as part of the map creation process.  With the fog of war activated, many interactions change.
+		In particular, it is no longer possible to access units or resource nodes found outside of the
+		 sight radius of your units, events occurring entirely outside of your sight radius are no longer
+		  available to you, and it is no longer possible to query the state to get the templates and resource values of any agent but yourself.
+		The challenge of finding resource nodes may be partially compensated for if "revealed resources"
+		 is toggled on (which is accomplished in much the same way as with fog of war itself).  
+		 With resources revealed, the EventLogger will tell you the location and type of all resources via getRevealedResources().
+		   Beware though, as it only logs the appearance of resources, some other player (or even you) may have mined out or cut down the resource in the meantime.  
+		</p>
+		<h2 id="unit_templates">11. The Unit Templates File</h2>
+			<p>
+				A great deal of information is stored in the unit_templates file.  This file is formatted using JSON and carries details
+				that allow the program to initialize different types of unit and upgrade.  The general formatting used by this is:
+				<code>"IrrelevantName2" : { "Option1" : valueofoption1, "Option2" : valueofoption2 }, "IrrelevantName2" : { "Option1" : valueofoption1, "Option2" : valueofoption2 }</code>
+				such as 
+				<code>"Barracks" : { "Name" : "Barracks", "GoldCost" : 300, "Produces" : ["Footman","Archer"] }, "Footman" : { "Name" : "Footman", "GoldCost" : 200, "BasicAttack" : 3}</code>
+				
+			</p>
+			<p>A complete list of available options for creating a customized unit or upgrade follows.  This uses the conceit of 
+				<ul>
+					<li>
+						<p>
+							The following are used in both units and upgrades:
+						</p>
+						<ul>
+							<li>
+								"Name" : "MyNewTemplate"<br/>
+								This example denotes that the name of the unit or upgrade is MyNewTemplate.
+								This field may be any string.
+								This is a necessary field.
+							</li>
+							<li>
+								"TemplateType" : "Unit"<br/>
+								This example denotes that the template is a unit.
+								This field may be either "Unit" or "Upgrade".
+								This is a necessary field.
+							</li>
+							<li>
+								"TimeCost" : 3<br/>
+								This example denotes that the template will take 3 steps to build or produce.
+								This field may be any positive integer, any other will be rejected.
+								This is an optional field that defaults at 1.
+								This field is related to the various Duration fields for units, differing in that the duration is stored in the target instead of the actor.
+							</li>
+							
+							<li>
+								"GoldCost" : 400<br/>
+								This example denotes that the template will cost 400 gold to build or produce.
+								This field may be any nonnegative integer, any other will be rejected.
+								This is an optional field that defaults at 0 (no cost).
+							</li>
+							<li>
+								"WoodCost" : 50<br/>
+								This example denotes that the template will cost 50 wood to build or produce.
+								This field may be any nonnegative integer, any other will be rejected.
+								This is an optional field that defaults at 0 (no cost).
+							</li>
+							<li>
+								"FoodCost" : 3<br/>
+								This example denotes that the template will take up 3 food when built or produced.
+								This field may be any nonnegative integer, any other will be rejected.
+								This is an optional field that defaults at 0 (no cost).
+							</li>
+							<li>
+								"UpgradePrereq" : ["SuperWeaponUpgrade","FootUpgrade"]<br/>
+								This example denotes that this template cannot be produced/built unless the player has completed an upgrade of the type with name "SuperWeaponUpgrade" and an upgrade of the type with name "FootUpgrade".
+								This field is a list of strings, each of should correspond to the Name field of a upgrade.
+								The full prerequisites are the intersection of BuildPrereq and UpgradePrereq.
+							</li>
+							<li>
+								"BuildPrereq" : ["Blacksmith","Stable"]<br/>
+								This example denotes that this template cannot be produced/built unless the player has a unit of the type with name "Blacksmith" and a unit of the type with name "Stable".
+								This field is a list of strings, each of should correspond to the Name field of a unit.
+								The full prerequisites are the intersection of BuildPrereq and UpgradePrereq.
+							</li>
+						</ul>
+					</li>
+					<li>
+						<p>
+							The following features are only read by units:
+						</p>
+						<ul>
+							<li>
+								"HitPoints" : 30<br/>
+								This example denotes that the unit will start with 30 health.
+								This field may be any positive integer*, any other will be rejected.
+								This is an optional field that defaults to 1 (a single point of health).
+							</li>
+							<li>
+								"SightRange" : 5<br/>
+								This example denotes that when the game is partially observable, the player will be able to observe events at a distance of less than or equal to 5.
+								This field can be any integer, but not all have distinct meanings.  In normal circumstances, a sight range of zero will observe only events associated with that unit.  A negative sight range will never allow any additional observation.
+								This is an optional field that defaults to 0 (seeing only itself). 
+							</li>
+							<li>
+								"Character" : "p"<br/>
+								This example denotes that the unit will be associated with the letter 'p' on the visual display.   
+								This field can be any nonempty string, but the unit will only be associated with the first character in that string.
+								This is an optional field that defaults to '?'. 
+							</li>
+							<li>
+								"BasicAttack" : 6<br/>
+								This example denotes that the first parameter in the unit's attack is 6.
+								This field can be any integer.
+								This field is optional and defaults to 0.
+								If both this and the Piercing field are 0, then the unit will be unable to attack (rather than attacking and doing no damage).
+							</li>
+							<li>
+								"Piercing" : 3<br/>
+								This example denotes that the second parameter in the unit's attack is 3.
+								This field can be any integer.
+								This field is optional and defaults to 0.
+								If both this and the BasicAttack field are 0, then the unit will be unable to attack (rather than attacking and doing no damage).
+							</li>
+							<li>
+								"Range" : 4<br/>
+								This example denotes that the maximum distance to a target for this unit to attack it is 4.
+								This field can be any integer, but not all have distinct meanings.  1 represents a melee attack, 0 can only attack itself in normal circumstances, negative ranges will never be able to attack anything.
+								This field is irrelevant when the unit cannot attack (IE: when both attack parameters are zero).
+								This field is optional and defaults to 1 (melee attack).
+							</li>
+							<li>
+								"Armor" : 2<br/>
+								This example denotes that the armor reduction in damage calculation is 2.
+								This field can be any integer.
+								This field is irrelevant when the unit cannot attack (IE: when both attack parameters are zero).
+								This field is optional and defaults to 0 (no armor reduction).
+							</li>
+							<li>
+								"Mobile" : true<br/>
+								This example denotes that the unit is capable of attempting a move action.
+								This field can be true or false.
+								This field is optional and defaults to false (unable to move).
+							</li>
+							<li>
+								"Gatherer" : true<br/>
+								This example denotes that the unit is capable of attempting a gather action.
+								This field can be true or false.
+								This field is optional and defaults to false (unable to gather).
+							</li>
+							<li>
+								"Gatherer" : true<br/>
+								This example denotes that the unit is capable of attempting a gather action.
+								This field can be true or false.
+								This field is optional and defaults to false (unable to gather).
+							</li>
+							<li>
+								"GoldPerTrip" : 50<br/>
+								This example denotes that the unit is capable of gathering 50 gold in a single step and carrying up to 50 gold at a time.
+								This field can be any nonnegative integer*.
+								This field is optional and defaults to 0 (unable to hold or pickup any gold).
+							</li>
+							<li>
+								"WoodPerTrip" : 20<br/>
+								This example denotes that the unit is capable of gathering 50 wood in a single step and carrying up to 50 wood at a time.
+								This field can be any nonnegative integer*.
+								This field is optional and defaults to 0 (unable to hold or pickup any wood).
+							</li>
+							<li>
+								"AcceptsWood" : true<br/>
+								This example denotes that the unit is capable of being the target of a deposit from a unit carrying wood.
+								This field can be either true or false
+								This field is optional and defaults to false (unable to be the target of a deposit from a unit carying wood).
+							</li>
+							<li>
+								"AcceptsGold" : true<br/>
+								This example denotes that the unit is capable of being the target of a deposit from a unit carrying gold.
+								This field can be either true or false
+								This field is optional and defaults to false (unable to be the target of a deposit from a unit carying gold).
+							</li>
+							
+							<li>
+								"Builder" : true<br/>
+								This example denotes that the unit is capable of attempting to do build actions and incapable of attempting produce actions.
+								This field can be true or false.
+								This field is optional and defaults to false (capable of attempting produce actions and incapable of attempting produce actions).
+								This field is strongly related to the Produces field.  The two modify each other's meanings.
+							</li>
+							<li>
+								"Produces" : ["Barracks","Farm"]<br/>
+								This example denotes that the unit is capable of attempting to build or produce (depending on the Builder field) the unit or upgrade with names "Farm" or "Barracks"
+								This field is a list of strings.
+								This field is optional and defaults to an empty list (producing nothing).
+								This field is strongly related to the Builder field.  The two modify each other's meanings.
+							</li>
+							<li>
+								"DurationAttack" : 3<br/>
+								This example denotes that the unit, if capable of attacking, will take 3 steps to launch it's attack.
+								This field is a nonnegative integer*.
+								This field is optional and defaults to 1 (the attack will be applied to make the next state).
+								This field is irrelevant if the unit is unable to attack (see Piercing and BasicAttack fields).
+							</li>
+							<li>
+								"DurationDeposit" : 3<br/>
+								This example denotes that the unit, if capable of gathering, will take 3 steps to deposit the resources it is carrying.
+								This field is a nonnegative integer*.
+								This field is optional and defaults to 1 (the deposit will be applied to make the next state).
+								This field is irrelevant if the unit is unable to gather (see the Gatherer field).
+							</li>
+							<li>
+								"DurationGatherWood" : 3<br/>
+								This example denotes that the unit, if capable of gathering, will take 3 steps to deposit the resources it is carrying.
+								This field is a nonnegative integer*.
+								This field is optional and defaults to 1 (the gathering will be applied to make the next state).
+								This field is irrelevant if the unit is unable to gather (see the Gatherer field).
+							</li>
+							<li>
+								"DurationGatherGold" : 3<br/>
+								This example denotes that the unit, if capable of gathering, will take 3 steps to deposit the resources it is carrying.
+								This field is a nonnegative integer*.
+								This field is optional and defaults to 1 (the gathering will be applied to make the next state).
+								This field is irrelevant if the unit is unable to gather (see the Gatherer field).
+							</li>
+							<li>
+								"DurationMove" : 3<br/>
+								This example denotes that the unit, if capable of moving, will take 3 steps to move from one place to an adjacent place.
+								This field is a nonnegative integer*.
+								This field is optional and defaults to 1 (the move will be applied to make the next state).
+								This field is irrelevant if the unit is unable to move (see the Mobile field).
+							</li>
+						</ul>
+						<p>
+							The following features are only read by upgrades:
+						</p>
+						<ul>
+							<li>
+								"PiercingAttackIncrease" : 3<br/>
+								This example denotes that units affected by the upgrade will get +3 piercing (armor-bypassing) attack
+								This field may be any integer.
+								A negative integer will reduce attack.  Negative total amounts of attack are not recommended.
+								This is an optional field that defaults to 0 (no change).
+							</li>
+							<li>
+								"BasicAttackIncrease" : 1<br/>
+								This example denotes that units affected by the upgrade will get +1 basic (armor-reduced) attack
+								This field may be any integer.
+								A negative integer will reduce attack.  Negative total amounts of attack are not recommended.
+								This is an optional field that defaults to 0 (no change).
+							</li>
+							<li>
+								"ArmorIncrease" : 2<br/>
+								This example denotes that units affected by the upgrade will get +2 armor
+								This field may be any integer.
+								A negative integer will reduce armor.  Negative total amounts of armor are not recommended.
+								This is an optional field that defaults to 0 (no change).
+							</li>
+							<li>
+								"HealthIncrease" : 10<br/>
+								This example denotes that units affected by the upgrade will get 10 starting and maximum health.  This also increases current health by the same amount.
+								This field may be any integer.
+								A negative integer will reduce starting and maximum hit points, this is not recommended as negative total amounts of health from upgrades may result in bugs, as they may not be cleaned up.
+								This is an optional field that defaults to 0 (no change).
+							</li>
+							<li>
+								"RangeIncrease" : -1<br/>
+								This example denotes that units affected by the upgrade will get -1 range.
+								This field may be any integer.
+								A negative integer will reduce range.  A range of zero may only hit itself under normal circumstances, and a negative range can't hit anything.
+								This is an optional field that defaults to 0 (no change).
+							</li>
+							<li>
+								"Affects" : ["Footman","Archer"]<br/>
+								This example denotes that the increases noted by the other fields will be applied to the Footman and Archer templates.
+								This field may be any list of Unit Template names.
+								This is an optional field, but will default to affecting nothing.
+							</li>
+						</ul>
+					</li>
+				</ul>
+			</p>
+		<h2 id="Matlab">MATLAB Specific Instructions</h2>
+		<p>Be aware that Sepia works only under Matlab of Windows 7 environment, and doesn't work under Matlab of Unix/Linux/Mac OS X environment.
+		</p>
+		<p>It is recommended that those with any Java experience, and even those without any, just use the Java version instead of this more cumbersome MATLAB interface.
+		</p>
+		<h3>Running the Sample Code</h3>
+			<p>To test the matlab_script from the folder data/matlab_script, simply run test_sepia in matlab.<br>
+			This will call the main function in edu.cwru.sepia.Main, passing proper arguments.  This, in turn, calls the edu.cwru.sepia.agent.MatlabAgent.
+			</p>
+		<h3>Writing your own MATLAB Agent</h3>
+		<p>In order to write your own Agent with matlab, you must implements the following four functions, using names exactly as written:
+			<ul>
+				<li>1. agent_init -- will be called only once when MatlabAgent was created</li>
+				<li>2. agent_initialStep -- will be called at first step of the episode.</li>
+				<li>3. agent_middleStep -- called at each step of the episode (non-first, non-terminal step)</li>
+				<li>4. agent_terminalStep -- called at the terminal step of the episode</li>
+			</ul>
+		</p>
+		<h2 id="Contact">12. Contact Info</h2>
+		<p>For questions about running simulations, contact Tim Ernsberger at 
+			<a href="maito:tse6@case.edu">tse6@case.edu</a>.
+		</p>
+		<p>For questions about game mechanics, contact Scott Sosnowski at
+			<a href="mailto:sts12@case.edu">sts12@case.edu</a>.
+		</p>
+		<p>For questions about the Matlab interface, contact
+			Feng Cao at <a href="mailto:fxc100@case.edu">fxc100@case.edu</a>.
+		</p>
+	</body>
+</html>
