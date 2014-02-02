@@ -96,50 +96,71 @@ public class RCAgent extends Agent {
 		List<Integer> allUnitIds = currentState.getAllUnitIds();
 		List<Integer> peasantIds = new ArrayList<Integer>();
 		List<Integer> townhallIds = new ArrayList<Integer>();
+		List<Integer> farmIds = new ArrayList<Integer>();
+		List<Integer> barracksIds = new ArrayList<Integer>();
+		List<Integer> footmanIds = new ArrayList<Integer>();
 		for(int i=0; i<allUnitIds.size(); i++) {
 			int id = allUnitIds.get(i);
 			UnitView unit = currentState.getUnit(id);
 			String unitTypeName = unit.getTemplateView().getName();
+			System.out.println("Unit Type Name: " + unitTypeName);
 			if(unitTypeName.equals("TownHall"))
 				townhallIds.add(id);
 			if(unitTypeName.equals("Peasant"))
 				peasantIds.add(id);
+			if(unitTypeName.equals("Farm"))
+				farmIds.add(id);
+			if(unitTypeName.equals("Barracks"))
+				barracksIds.add(id);
+			if(unitTypeName.equals("Footman"))
+				footmanIds.add(id);
 		}
 		
 		if(peasantIds.size()>=3) {  // collect resources
-			if(currentWood<250) {
-				int peasantId = peasantIds.get(1);
-				int townhallId = townhallIds.get(0);
-				Action b = null;
-				if(currentState.getUnit(peasantId).getCargoAmount()>0)
-					b = new TargetedAction(peasantId, ActionType.COMPOUNDDEPOSIT, townhallId);
-				else {
-					List<Integer> resourceIds = currentState.getResourceNodeIds(Type.TREE);
-					b = new TargetedAction(peasantId, ActionType.COMPOUNDGATHER, resourceIds.get(0));
-				}
-				builder.put(peasantId, b);
-			}
-			if(currentGold<500) {
+			if (farmIds.size() < 1 && currentGold >= 500 && currentWood >= 250) {
+				System.out.println("Building a Farm???");
 				int peasantId = peasantIds.get(0);
-				int townhallId = townhallIds.get(0);
-				Action b = null;
-				if(currentState.getUnit(peasantId).getCargoType() == ResourceType.GOLD && currentState.getUnit(peasantId).getCargoAmount()>0)
-					b = new TargetedAction(peasantId, ActionType.COMPOUNDDEPOSIT, townhallId);
-				else {
-					List<Integer> resourceIds = currentState.getResourceNodeIds(Type.GOLD_MINE);
-					b = new TargetedAction(peasantId, ActionType.COMPOUNDGATHER, resourceIds.get(0));
-				}
-				builder.put(peasantId, b);
-				
-				peasantId = peasantIds.get(2);
-				if(currentState.getUnit(peasantId).getCargoType() == ResourceType.GOLD && currentState.getUnit(peasantId).getCargoAmount()>0)
-					b = new TargetedAction(peasantId, ActionType.COMPOUNDDEPOSIT, townhallId);
-				else {
-					List<Integer> resourceIds = currentState.getResourceNodeIds(Type.GOLD_MINE);
-					b = new TargetedAction(peasantId, ActionType.COMPOUNDGATHER, resourceIds.get(0));
-				}
+				Action b = new TargetedAction(peasantId, ActionType.PRIMITIVEBUILD, 0);
 				builder.put(peasantId, b);
 			}
+			
+			if (barracksIds.size() < 1 && currentGold >= 700 && currentWood >= 400) {
+				System.out.println("Building a Barracks???");
+				int peasantId = peasantIds.get(0);
+				Action b = new TargetedAction(peasantId, ActionType.PRIMITIVEBUILD, 0);
+				builder.put(peasantId, b);
+			}
+			
+			int peasantId = peasantIds.get(1);
+			int townhallId = townhallIds.get(0);
+			Action b = null;
+			if(currentState.getUnit(peasantId).getCargoAmount()>0)
+				b = new TargetedAction(peasantId, ActionType.COMPOUNDDEPOSIT, townhallId);
+			else {
+				List<Integer> resourceIds = currentState.getResourceNodeIds(Type.TREE);
+				b = new TargetedAction(peasantId, ActionType.COMPOUNDGATHER, resourceIds.get(0));
+			}
+			builder.put(peasantId, b);
+			
+			peasantId = peasantIds.get(0);
+			if(currentState.getUnit(peasantId).getCargoType() == ResourceType.GOLD && currentState.getUnit(peasantId).getCargoAmount()>0)
+				b = new TargetedAction(peasantId, ActionType.COMPOUNDDEPOSIT, townhallId);
+			else {
+				List<Integer> resourceIds = currentState.getResourceNodeIds(Type.GOLD_MINE);
+				b = new TargetedAction(peasantId, ActionType.COMPOUNDGATHER, resourceIds.get(0));
+			}
+			builder.put(peasantId, b);
+			
+			peasantId = peasantIds.get(2);
+			if(currentState.getUnit(peasantId).getCargoType() == ResourceType.GOLD && currentState.getUnit(peasantId).getCargoAmount()>0)
+				b = new TargetedAction(peasantId, ActionType.COMPOUNDDEPOSIT, townhallId);
+			else {
+				List<Integer> resourceIds = currentState.getResourceNodeIds(Type.GOLD_MINE);
+				b = new TargetedAction(peasantId, ActionType.COMPOUNDGATHER, resourceIds.get(0));
+			}
+			
+			builder.put(peasantId, b);
+			
 		}
 		else {  // build peasant
 			if(currentGold>=400) {
