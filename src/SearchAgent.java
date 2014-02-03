@@ -55,6 +55,15 @@ public class SearchAgent extends Agent {
 	
 	private List<GraphNode> getPathToTownHall(StateView currentState, UnitView footman, UnitView townhall) {
 		
+		GraphNode nodeMap[][] = new GraphNode[currentState.getXExtent()][currentState.getYExtent()];
+		for(int i=0; i < currentState.getXExtent(); i++){
+			for(int j=0; j <currentState.getYExtent(); j++){
+				if(!currentState.isUnitAt(i,j) && !currentState.isResourceAt(i, j)){
+					nodeMap[i][j] = new GraphNode(i,j);
+				}
+			}
+		}
+		
 		int chebyshevD = Math.max(Math.abs(townhall.getXPosition() - footman.getXPosition()), Math.abs(townhall.getYPosition() - footman.getYPosition()));
 
 		return null;
