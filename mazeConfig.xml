@@ -2,7 +2,7 @@
 	<Map>maze_16x16h.xml</Map>
 	<Player Id="0">
 		<AgentClass>
-			<ClassName>edu.cwru.sepia.agent.CombatAgent</ClassName>
+			<ClassName>edu.cwru.sepia.agent.SearchAgent</ClassName>
 		</AgentClass>
 		</Player><Player Id="0">
 		<AgentClass>
