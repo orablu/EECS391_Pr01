@@ -2,9 +2,10 @@
 	<Map>maze_16x16h.xml</Map>
 	<Player Id="0">
 		<AgentClass>
-			<ClassName>edu.cwru.sepia.agent.SearchAgent</ClassName>
+			<ClassName>SearchAgent</ClassName>
 		</AgentClass>
-		</Player><Player Id="0">
+	</Player>
+	<Player Id="0">
 		<AgentClass>
 			<ClassName>edu.cwru.sepia.agent.visual.VisualAgent</ClassName>
 			<Argument>true</Argument>
