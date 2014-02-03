@@ -4,6 +4,7 @@
 		<AgentClass>
 			<ClassName>edu.cwru.sepia.agent.CombatAgent</ClassName>
 		</AgentClass>
+		</Player><Player Id="0">
 		<AgentClass>
 			<ClassName>edu.cwru.sepia.agent.visual.VisualAgent</ClassName>
 			<Argument>true</Argument>
