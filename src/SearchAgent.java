@@ -32,6 +32,7 @@ import edu.cwru.sepia.agent.Agent;
 import edu.cwru.sepia.environment.model.history.History;
 import edu.cwru.sepia.environment.model.state.State.StateView;
 import edu.cwru.sepia.environment.model.state.Unit.UnitView;
+import edu.cwru.sepia.util.Direction;
 
 /**
  * This agent will first collect gold to produce a peasant, then the two
@@ -46,13 +47,16 @@ public class SearchAgent extends Agent {
 			.getCanonicalName());
 
 	private int step;
+	List<GraphNode> path = new ArrayList<GraphNode>();
 
 	public SearchAgent(int playernum, String[] arguments) {
 		super(playernum);
-
+		System.out.println("PLayer Number: " + playernum);
 	}
 
 	StateView currentState;
+	UnitView footman = null;
+	UnitView townhall = null;
 
 	private List<GraphNode> getPathToTownHall(StateView currentState,
 			UnitView footman, UnitView townhall) {
@@ -139,8 +143,9 @@ public class SearchAgent extends Agent {
 	public Map<Integer, Action> initialStep(StateView newstate,
 			History.HistoryView statehistory) {
 		step = 0;
+		currentState = newstate;
 
-		List<Integer> unitIds = currentState.getUnitIds(playernum);
+		List<Integer> unitIds = currentState.getAllUnitIds();
 		List<Integer> townhallIds = new ArrayList<Integer>();
 		List<Integer> footmanIds = new ArrayList<Integer>();
 		for (int i = 0; i < unitIds.size(); i++) {
@@ -154,11 +159,16 @@ public class SearchAgent extends Agent {
 				footmanIds.add(id);
 		}
 
-		UnitView footman = currentState.getUnit(footmanIds.get(0));
-		UnitView townhall = currentState.getUnit(townhallIds.get(0));
+		footman = currentState.getUnit(footmanIds.get(0));
+		townhall = currentState.getUnit(townhallIds.get(0));
 
-		List<GraphNode> path = getPathToTownHall(currentState, footman,
+		path = getPathToTownHall(currentState, footman,
 				townhall);
+		
+		System.out.println("Path Nodes:");
+		for (GraphNode node : path) {
+			System.out.println(node.x + "," + node.y);
+		}
 
 		return middleStep(newstate, statehistory);
 	}
@@ -170,6 +180,13 @@ public class SearchAgent extends Agent {
 
 		Map<Integer, Action> builder = new HashMap<Integer, Action>();
 		currentState = newState;
+		
+		GraphNode nextNode = path.remove(0);
+		Direction direction = Direction.getDirection(nextNode.x - footman.getXPosition(), nextNode.y - footman.getYPosition());
+		Action b = Action.createPrimitiveMove(footman.getID(), direction);
+		
+		System.out.println("Moving: " + direction);
+		builder.put(footman.getID(), b);
 
 		return builder;
 	}
