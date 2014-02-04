@@ -51,7 +51,6 @@ public class SearchAgent extends Agent {
 
 	public SearchAgent(int playernum, String[] arguments) {
 		super(playernum);
-		System.out.println("PLayer Number: " + playernum);
 	}
 
 	StateView currentState;
@@ -83,6 +82,7 @@ public class SearchAgent extends Agent {
 
 	private List<GraphNode> getPathToTarget(GraphNode map[][],
 			GraphNode initial, GraphNode target) {
+		WeightedNode.target = new GraphNode(target.x, target.y);
 		WeightedNode current = new WeightedNode(initial, null);
 
 		// Search for the town hall.
