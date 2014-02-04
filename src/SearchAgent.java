@@ -135,10 +135,6 @@ public class SearchAgent extends Agent {
 		return nodes;
 	}
 
-	private int chebyshevDistance(int x1, int y1, int x2, int y2) {
-		return Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1));
-	}
-
 	@Override
 	public Map<Integer, Action> initialStep(StateView newstate,
 			History.HistoryView statehistory) {
