@@ -102,7 +102,7 @@ public class SearchAgent extends Agent {
             }
 
             // Exit search if done.
-            if (openSet.isEmpty() || targetAdjacent())
+            if (openSet.isEmpty() || targetAdjacent(current, target))
                 break;
 
             // This node has been explred now.
@@ -128,9 +128,9 @@ public class SearchAgent extends Agent {
         return path;
     }
 
-    private boolean targetAdjacent(GraphNode current, GraphNode target) {
-        for (int i = current.x - 1; i < current.x + 1; i++) {
-            for (int j = current.y - 1; j < current.y + 1; j++) {
+    private boolean targetAdjacent(WeightedNode current, GraphNode target) {
+        for (int i = current.getNode().x - 1; i < current.getNode().x + 1; i++) {
+            for (int j = current.getNode().y - 1; j < current.getNode().y + 1; j++) {
                 if (i == target.x && j == target.y)
                     return true;
             }
