@@ -57,7 +57,7 @@ public class SearchAgent extends Agent {
 	private List<GraphNode> getPathToTownHall(StateView currentState,
 			UnitView footman, UnitView townhall) {
 
-        // Create the map, leaving occupied cells blank.
+		// Create the map, leaving occupied cells blank.
 		GraphNode nodeMap[][] = new GraphNode[currentState.getXExtent()][currentState
 				.getYExtent()];
 		for (int i = 0; i < currentState.getXExtent(); i++) {
@@ -69,67 +69,75 @@ public class SearchAgent extends Agent {
 			}
 		}
 
-        // Get the nodes containing the our target and origin.
-        GraphNode initial = new GraphNode(footman.getXPosition(), footman.getYPosition());
-        GraphNode target = new GraphNode(townhall.getXPosition(), townhall.getYPosition());
-        return getPathToTarget(nodeMap, initial, target);
-    }
-
-    private List<GraphNode> getPathToTarget(GraphNode map[][], GraphNode initial, GraphNode target) {
-        WeightedNode current = new WeightedNode(initial, null);
-
-        // Search for the town hall.
-        List<WeightedNode> openSet = new ArrayList<>();
-
-        while (true) {
-            openSet.remove(current);
-            List<GraphNode> adjacent = getAdjacentNodes(map, current.getNode());
-            boolean targetAdjacent = false;
-
-            // Find the adjacent node with the lowest heuristic cost.
-            for (GraphNode node : adjacent) {
-                openSet.add(new WeightedNode(node, current));
-                if (node.x == target.x && node.y == target.y)
-                    targetAdjacent = true;
-            }
-
-            // Exit search if done.
-            if (openSet.isEmpty() || targetAdjacent)
-                break;
-
-            // Find the next open node with the lowest cost.
-            WeightedNode next = openSet.get(0);
-            for (WeightedNode node : openSet) {
-                if (node.getCost() < next.getCost())
-                    next = node;
-            }
-            current = next;
-        }
-
-        // Collect the path.
-        List<GraphNode> path = new ArrayList<>();
-        while (current.getParent() != null) {
-            path.add(0, current.getNode());
-            current = current.getParent();
-        }
-
-        return path;
+		// Get the nodes containing the our target and origin.
+		GraphNode initial = new GraphNode(footman.getXPosition(),
+				footman.getYPosition());
+		GraphNode target = new GraphNode(townhall.getXPosition(),
+				townhall.getYPosition());
+		return getPathToTarget(nodeMap, initial, target);
 	}
 
-    private List<GraphNode> getAdjacentNodes(GraphNode map[][], GraphNode current) {
-        int x = current.x;
-        int y = current.y;
-        List<GraphNode> nodes = new ArrayList<>();
-        for (int i = Math.max(x - 1, 0); i < Math.min(x + 2, map.length); i++) {
-            for (int j = Math.max(y - 1, 0); j < Math.min(y + 2, map[i].length); j++) {
-                if (i == x && j == y)
-                    continue;
-                if (map[i][j] != null)
-                    nodes.add(map[i][j]);
-            }
-        }
-        return nodes;
-    }
+	private List<GraphNode> getPathToTarget(GraphNode map[][],
+			GraphNode initial, GraphNode target) {
+		WeightedNode current = new WeightedNode(initial, null);
+
+		// Search for the town hall.
+		List<WeightedNode> openSet = new ArrayList<>();
+
+		while (true) {
+			openSet.remove(current);
+			List<GraphNode> adjacent = getAdjacentNodes(map, current.getNode());
+			boolean targetAdjacent = false;
+
+			// Find the adjacent node with the lowest heuristic cost.
+			for (GraphNode node : adjacent) {
+				openSet.add(new WeightedNode(node, current));
+				if (node.x == target.x && node.y == target.y)
+					targetAdjacent = true;
+			}
+
+			// Exit search if done.
+			if (openSet.isEmpty() || targetAdjacent)
+				break;
+
+			// Find the next open node with the lowest cost.
+			WeightedNode next = openSet.get(0);
+			for (WeightedNode node : openSet) {
+				if (node.getCost() < next.getCost())
+					next = node;
+			}
+			current = next;
+		}
+
+		// Collect the path.
+		List<GraphNode> path = new ArrayList<>();
+		while (current.getParent() != null) {
+			path.add(0, current.getNode());
+			current = current.getParent();
+		}
+
+		return path;
+	}
+
+	private List<GraphNode> getAdjacentNodes(GraphNode map[][],
+			GraphNode current) {
+		int x = current.x;
+		int y = current.y;
+		List<GraphNode> nodes = new ArrayList<>();
+		for (int i = Math.max(x - 1, 0); i < Math.min(x + 2, map.length); i++) {
+			for (int j = Math.max(y - 1, 0); j < Math.min(y + 2, map[i].length); j++) {
+				if (i == x && j == y)
+					continue;
+				if (map[i][j] != null)
+					nodes.add(map[i][j]);
+			}
+		}
+		return nodes;
+	}
+
+	private int chebyshevDistance(int x1, int y1, int x2, int y2) {
+		return Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1));
+	}
 
 	@Override
 	public Map<Integer, Action> initialStep(StateView newstate,
