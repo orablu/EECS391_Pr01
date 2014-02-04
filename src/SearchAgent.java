@@ -54,8 +54,8 @@ public class SearchAgent extends Agent {
     }
 
     StateView currentState;
-	UnitView footman = null;
-	UnitView townhall = null;
+    UnitView footman = null;
+    UnitView townhall = null;
 
     private List<GraphNode> getPathToTownHall(StateView currentState,
             UnitView footman, UnitView townhall) {
@@ -82,7 +82,7 @@ public class SearchAgent extends Agent {
 
     private List<GraphNode> getPathToTarget(GraphNode map[][],
             GraphNode initial, GraphNode target) {
-		WeightedNode.target = new GraphNode(target.x, target.y);
+        WeightedNode.target = new GraphNode(target.x, target.y);
         WeightedNode current = new WeightedNode(initial, null);
 
         // Search for the town hall.
@@ -97,12 +97,12 @@ public class SearchAgent extends Agent {
 
             // Find the adjacent node with the lowest heuristic cost.
             for (GraphNode node : adjacent) {
-				System.out.println("\tAdjacent Node: " + current);
+                System.out.println("\tAdjacent Node: " + current);
                 openSet.add(new WeightedNode(node, current));
             }
 
             // Exit search if done.
-            if (openSet.isEmpty() || targetAdjacent(current, target))
+            if (openSet.isEmpty() || targetAdjacent(current))
                 break;
 
             // This node has been explred now.
@@ -114,7 +114,7 @@ public class SearchAgent extends Agent {
                 if (node.getCost() < next.getCost())
                     next = node;
             }
-			System.out.println("Moving to node: " + current);
+            System.out.println("Moving to node: " + current);
             current = next;
         }
 
@@ -128,13 +128,20 @@ public class SearchAgent extends Agent {
         return path;
     }
 
-    private boolean targetAdjacent(WeightedNode current, GraphNode target) {
-        for (int i = current.getNode().x - 1; i < current.getNode().x + 1; i++) {
-            for (int j = current.getNode().y - 1; j < current.getNode().y + 1; j++) {
+    private boolean targetAdjacent(WeightedNode current) {
+        int x = current.getNode().x;
+        int y = current.getNode().y;
+        GraphNode target = WeightedNode.target;
+        System.out.printf("Target is (%d, %d), currently at (%d, %d).\n",
+                target.x, target.y, x, y);
+        for (int i = x - 1; i <= x + 1; i++) {
+            for (int j = y - 1; j <= y + 1; j++) {
                 if (i == target.x && j == target.y)
+                    System.out.printf("Target is adjacent!");
                     return true;
             }
         }
+        System.out.printf("Target is not adjacent.");
         return false;
     }
 
@@ -145,107 +152,116 @@ public class SearchAgent extends Agent {
         List<GraphNode> nodes = new ArrayList<>();
         for (int i = Math.max(x - 1, 0); i < Math.min(x + 2, map.length); i++) {
             for (int j = Math.max(y - 1, 0); j < Math.min(y + 2, map[i].length); j++) {
-                if ((i != x && j != y) && map[i][j] != null
-                        && !visited.contains(map[i][j])) {
-                    nodes.add(map[i][j]);
+                if (i == x || j == y) {
+                    continue;
                 }
+                if (map[i][j] == null) {
+                    System.out.printf("Node (%d, %d) is occupied.\n", i, j);
+                    continue;
+                }
+                if (visited.contains(map[i][j])) {
+                    System.out.printf("Node (%d, %d) is already visited.\n", i, j);
+                    continue;
+                }
+                System.out.printf("Node (%d, %d) is valid and adjacent!\n", i, j);
+                nodes.add(map[i][j]);
             }
         }
         return nodes;
     }
 
-	private Direction getDirection(int x, int y) {
-		if (x == 1 && y == 0) {
-			return Direction.EAST;
-		} else if (x == 1 && y == 1) {
-			return Direction.NORTHEAST;
-		} else if (x == 0 && y == 1) {
-			return Direction.NORTH;
-		} else if (x == -1 && y == 1) {
-			return Direction.NORTHWEST;
-		} else if (x == -1 && y == 0) {
-			return Direction.WEST;
-		} else if (x == -1 && y == -1) {
-			return Direction.SOUTHWEST;
-		} else if (x == 0 && y == -1) {
-			return Direction.SOUTH;
-		} else if (x == 1 && y == -1) {
-			return Direction.SOUTHEAST;
-		} else {
-			System.out.println("Something bad happened while calculating direction");
-			return null;
-		}
-	}
+    private Direction getDirection(int x, int y) {
+        if (x == 1 && y == 0) {
+            return Direction.EAST;
+        } else if (x == 1 && y == 1) {
+            return Direction.NORTHEAST;
+        } else if (x == 0 && y == 1) {
+            return Direction.NORTH;
+        } else if (x == -1 && y == 1) {
+            return Direction.NORTHWEST;
+        } else if (x == -1 && y == 0) {
+            return Direction.WEST;
+        } else if (x == -1 && y == -1) {
+            return Direction.SOUTHWEST;
+        } else if (x == 0 && y == -1) {
+            return Direction.SOUTH;
+        } else if (x == 1 && y == -1) {
+            return Direction.SOUTHEAST;
+        } else {
+            System.out.println("Something bad happened while calculating direction");
+            return null;
+        }
+    }
 
-	@Override
-	public Map<Integer, Action> initialStep(StateView newstate,
-			History.HistoryView statehistory) {
-		step = 0;
-		currentState = newstate;
+    @Override
+    public Map<Integer, Action> initialStep(StateView newstate,
+            History.HistoryView statehistory) {
+        step = 0;
+        currentState = newstate;
 
-		List<Integer> unitIds = currentState.getAllUnitIds();
-		List<Integer> townhallIds = new ArrayList<Integer>();
-		List<Integer> footmanIds = new ArrayList<Integer>();
-		for (int i = 0; i < unitIds.size(); i++) {
-			int id = unitIds.get(i);
-			UnitView unit = currentState.getUnit(id);
-			String unitTypeName = unit.getTemplateView().getName();
-			System.out.println("Unit Type Name: " + unitTypeName);
-			if (unitTypeName.equals("TownHall"))
-				townhallIds.add(id);
-			if (unitTypeName.equals("Footman"))
-				footmanIds.add(id);
-		}
+        List<Integer> unitIds = currentState.getAllUnitIds();
+        List<Integer> townhallIds = new ArrayList<Integer>();
+        List<Integer> footmanIds = new ArrayList<Integer>();
+        for (int i = 0; i < unitIds.size(); i++) {
+            int id = unitIds.get(i);
+            UnitView unit = currentState.getUnit(id);
+            String unitTypeName = unit.getTemplateView().getName();
+            System.out.println("Unit Type Name: " + unitTypeName);
+            if (unitTypeName.equals("TownHall"))
+                townhallIds.add(id);
+            if (unitTypeName.equals("Footman"))
+                footmanIds.add(id);
+        }
 
-		footman = currentState.getUnit(footmanIds.get(0));
-		townhall = currentState.getUnit(townhallIds.get(0));
+        footman = currentState.getUnit(footmanIds.get(0));
+        townhall = currentState.getUnit(townhallIds.get(0));
 
-		path = getPathToTownHall(currentState, footman,
-				townhall);
-		
-		System.out.println("Path Nodes:");
-		for (GraphNode node : path) {
-			System.out.println(node.x + "," + node.y);
-		}
+        path = getPathToTownHall(currentState, footman,
+                townhall);
+        
+        System.out.println("Path Nodes:");
+        for (GraphNode node : path) {
+            System.out.println(node.x + "," + node.y);
+        }
 
-		return middleStep(newstate, statehistory);
-	}
+        return middleStep(newstate, statehistory);
+    }
 
-	@Override
-	public Map<Integer, Action> middleStep(StateView newState,
-			History.HistoryView statehistory) {
-		step++;
+    @Override
+    public Map<Integer, Action> middleStep(StateView newState,
+            History.HistoryView statehistory) {
+        step++;
 
-		Map<Integer, Action> builder = new HashMap<Integer, Action>();
-		currentState = newState;
-		
-		GraphNode nextNode = path.remove(0);
-		Direction direction = getDirection(nextNode.x - footman.getXPosition(), nextNode.y - footman.getYPosition());
-		Action b = Action.createPrimitiveMove(footman.getID(), direction);
-		
-		System.out.println("Moving: " + direction);
-		builder.put(footman.getID(), b);
+        Map<Integer, Action> builder = new HashMap<Integer, Action>();
+        currentState = newState;
+        
+        GraphNode nextNode = path.remove(0);
+        Direction direction = getDirection(nextNode.x - footman.getXPosition(), nextNode.y - footman.getYPosition());
+        Action b = Action.createPrimitiveMove(footman.getID(), direction);
+        
+        System.out.println("Moving: " + direction);
+        builder.put(footman.getID(), b);
 
-		return builder;
-	}
+        return builder;
+    }
 
-	@Override
-	public void terminalStep(StateView newstate,
-			History.HistoryView statehistory) {
-		step++;
-	}
+    @Override
+    public void terminalStep(StateView newstate,
+            History.HistoryView statehistory) {
+        step++;
+    }
 
-	public static String getUsage() {
-		return "Naviagtes a footman to an enemy town hall";
-	}
+    public static String getUsage() {
+        return "Naviagtes a footman to an enemy town hall";
+    }
 
-	@Override
-	public void savePlayerData(OutputStream os) {
-		// this agent lacks learning and so has nothing to persist.
-	}
+    @Override
+    public void savePlayerData(OutputStream os) {
+        // this agent lacks learning and so has nothing to persist.
+    }
 
-	@Override
-	public void loadPlayerData(InputStream is) {
-		// this agent lacks learning and so has nothing to persist.
-	}
+    @Override
+    public void loadPlayerData(InputStream is) {
+        // this agent lacks learning and so has nothing to persist.
+    }
 }
