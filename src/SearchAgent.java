@@ -138,6 +138,29 @@ public class SearchAgent extends Agent {
 		}
 		return nodes;
 	}
+	
+	private Direction getDirection(int x, int y) {
+		if (x == 0 && y == 1) {
+			return Direction.EAST;
+		} else if (x == 1 && y == 1) {
+			return Direction.NORTHEAST;
+		} else if (x == 0 && y == 1) {
+			return Direction.NORTH;
+		} else if (x == -1 && y == 1) {
+			return Direction.NORTHWEST;
+		} else if (x == -1 && y == 0) {
+			return Direction.WEST;
+		} else if (x == -1 && y == -1) {
+			return Direction.SOUTHWEST;
+		} else if (x == 0 && y == -1) {
+			return Direction.SOUTH;
+		} else if (x == 1 && y == -1) {
+			return Direction.SOUTHEAST;
+		} else {
+			System.out.println("Something bad happened while calculating direction");
+			return null;
+		}
+	}
 
 	@Override
 	public Map<Integer, Action> initialStep(StateView newstate,
@@ -182,7 +205,7 @@ public class SearchAgent extends Agent {
 		currentState = newState;
 		
 		GraphNode nextNode = path.remove(0);
-		Direction direction = Direction.getDirection(nextNode.x - footman.getXPosition(), nextNode.y - footman.getYPosition());
+		Direction direction = getDirection(nextNode.x - footman.getXPosition(), nextNode.y - footman.getYPosition());
 		Action b = Action.createPrimitiveMove(footman.getID(), direction);
 		
 		System.out.println("Moving: " + direction);
