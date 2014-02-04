@@ -53,6 +53,7 @@ public class SearchAgent extends Agent {
 
     }
 
+    List<GraphNode> path = new ArrayList<GraphNode>();
     StateView currentState;
 	UnitView footman = null;
 	UnitView townhall = null;
