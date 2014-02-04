@@ -89,12 +89,14 @@ public class SearchAgent extends Agent {
 		List<WeightedNode> openSet = new ArrayList<>();
 
 		while (true) {
+			System.out.println("Moving to node: " + current);
 			openSet.remove(current);
 			List<GraphNode> adjacent = getAdjacentNodes(map, current.getNode());
 			boolean targetAdjacent = false;
 
 			// Find the adjacent node with the lowest heuristic cost.
 			for (GraphNode node : adjacent) {
+				System.out.println("\tAdjacent Node: " + current);
 				openSet.add(new WeightedNode(node, current));
 				if (node.x == target.x && node.y == target.y)
 					targetAdjacent = true;
@@ -140,7 +142,7 @@ public class SearchAgent extends Agent {
 	}
 	
 	private Direction getDirection(int x, int y) {
-		if (x == 0 && y == 1) {
+		if (x == 1 && y == 0) {
 			return Direction.EAST;
 		} else if (x == 1 && y == 1) {
 			return Direction.NORTHEAST;

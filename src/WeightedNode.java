@@ -43,4 +43,9 @@ public class WeightedNode {
         else
             accumCost = parent.accumCost + 1;
     }
+    
+    @Override
+    public String toString() {
+    	return String.format("%d,%d g(n)=%d, h(n)=%d, f(n)=%d", node.x, node.y, getAccumulatedCost(), getHeuristicCost(), getCost());
+    }
 }
