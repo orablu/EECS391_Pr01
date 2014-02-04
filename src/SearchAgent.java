@@ -83,10 +83,11 @@ public class SearchAgent extends Agent {
 
 		// Search for the town hall.
 		List<WeightedNode> openSet = new ArrayList<>();
+        List<GraphNode> closedSet = new ArrayList<>();
 
 		while (true) {
 			openSet.remove(current);
-			List<GraphNode> adjacent = getAdjacentNodes(map, current.getNode());
+			List<GraphNode> adjacent = getAdjacentNodes(map, current.getNode(), closedSet);
 			boolean targetAdjacent = false;
 
 			// Find the adjacent node with the lowest heuristic cost.
@@ -99,6 +100,9 @@ public class SearchAgent extends Agent {
 			// Exit search if done.
 			if (openSet.isEmpty() || targetAdjacent)
 				break;
+
+            // This node has been explred now.
+            closedSet.add(current.getNode());
 
 			// Find the next open node with the lowest cost.
 			WeightedNode next = openSet.get(0);
@@ -120,16 +124,17 @@ public class SearchAgent extends Agent {
 	}
 
 	private List<GraphNode> getAdjacentNodes(GraphNode map[][],
-			GraphNode current) {
+			GraphNode current, List<GraphNode> visited) {
 		int x = current.x;
 		int y = current.y;
 		List<GraphNode> nodes = new ArrayList<>();
 		for (int i = Math.max(x - 1, 0); i < Math.min(x + 2, map.length); i++) {
 			for (int j = Math.max(y - 1, 0); j < Math.min(y + 2, map[i].length); j++) {
-				if (i == x && j == y)
-					continue;
-				if (map[i][j] != null)
+				if ((i != x && j != y) &&
+                        map[i][j] == null &&
+                        !visited.contains(map[i][j])) {
 					nodes.add(map[i][j]);
+                }
 			}
 		}
 		return nodes;
