@@ -137,9 +137,10 @@ public class SearchAgent extends Agent {
                 target.x, target.y, x, y);
         for (int i = x - 1; i <= x + 1; i++) {
             for (int j = y - 1; j <= y + 1; j++) {
-                if (i == target.x && j == target.y)
+                if (i == target.x && j == target.y) {
                     System.out.printf("Target is adjacent!");
                     return true;
+                }
             }
         }
         System.out.printf("Target is not adjacent.");
@@ -154,7 +155,7 @@ public class SearchAgent extends Agent {
         List<GraphNode> nodes = new ArrayList<>();
         for (int i = Math.max(x - 1, 0); i < Math.min(x + 2, map.length); i++) {
             for (int j = Math.max(y - 1, 0); j < Math.min(y + 2, map[i].length); j++) {
-                if (i == x || j == y) {
+                if (i == x && j == y) {
                     continue;
                 }
                 if (map[i][j] == null) {
