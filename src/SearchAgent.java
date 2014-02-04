@@ -53,6 +53,7 @@ public class SearchAgent extends Agent {
 
     }
 
+    List<GraphNode> path = new ArrayList<GraphNode>();
     StateView currentState;
     UnitView footman = null;
     UnitView townhall = null;
@@ -149,6 +150,7 @@ public class SearchAgent extends Agent {
             GraphNode current, List<GraphNode> visited) {
         int x = current.x;
         int y = current.y;
+        System.out.printf("Searching for nodes adjacent to (%d, %d).\n", x, y);
         List<GraphNode> nodes = new ArrayList<>();
         for (int i = Math.max(x - 1, 0); i < Math.min(x + 2, map.length); i++) {
             for (int j = Math.max(y - 1, 0); j < Math.min(y + 2, map[i].length); j++) {
