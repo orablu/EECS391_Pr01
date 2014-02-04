@@ -19,7 +19,6 @@
  */
 //package edu.cwru.sepia.agent;
 
-
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -35,92 +34,154 @@ import edu.cwru.sepia.environment.model.state.State.StateView;
 import edu.cwru.sepia.environment.model.state.Unit.UnitView;
 
 /**
- * This agent will first collect gold to produce a peasant,
- * then the two peasants will collect gold and wood separately until reach goal.
+ * This agent will first collect gold to produce a peasant, then the two
+ * peasants will collect gold and wood separately until reach goal.
+ * 
  * @author Feng
- *
+ * 
  */
 public class SearchAgent extends Agent {
 	private static final long serialVersionUID = -4047208702628325380L;
-	private static final Logger logger = Logger.getLogger(SearchAgent.class.getCanonicalName());
-	
+	private static final Logger logger = Logger.getLogger(SearchAgent.class
+			.getCanonicalName());
+
 	private int step;
-	
+
 	public SearchAgent(int playernum, String[] arguments) {
 		super(playernum);
-		
+
 	}
 
 	StateView currentState;
-	
-	private List<GraphNode> getPathToTownHall(StateView currentState, UnitView footman, UnitView townhall) {
-		
-		GraphNode nodeMap[][] = new GraphNode[currentState.getXExtent()][currentState.getYExtent()];
-		for(int i=0; i < currentState.getXExtent(); i++){
-			for(int j=0; j <currentState.getYExtent(); j++){
-				if(!currentState.isUnitAt(i,j) && !currentState.isResourceAt(i, j)){
-					nodeMap[i][j] = new GraphNode(i,j);
+
+	private List<GraphNode> getPathToTownHall(StateView currentState,
+			UnitView footman, UnitView townhall) {
+
+		GraphNode nodeMap[][] = new GraphNode[currentState.getXExtent()][currentState
+				.getYExtent()];
+		for (int i = 0; i < currentState.getXExtent(); i++) {
+			for (int j = 0; j < currentState.getYExtent(); j++) {
+				if (!currentState.isUnitAt(i, j)
+						&& !currentState.isResourceAt(i, j)) {
+					nodeMap[i][j] = new GraphNode(i, j);
 				}
 			}
 		}
-		
-		int chebyshevD = Math.max(Math.abs(townhall.getXPosition() - footman.getXPosition()), Math.abs(townhall.getYPosition() - footman.getYPosition()));
 
-		return null;
+        // Get the nodes containing the our target and origin.
+        GraphNode target = null; // TODO: Replace with target's initial graphNode
+        GraphNode initial = null; // TODO: Replace with footman's initial graphNode
+        return getPathToTarget(nodeMap, initial, target);
+    }
+
+    private List<GraphNode> getPathToTarget(GraphNode map[][], GraphNode initial, GraphNode target) {
+        WeightedNode current = new WeightedNode(initial, null);
+
+        // Search for the town hall.
+        List<WeightedNode> openSet = new ArrayList<>();
+
+        while (true) {
+            openSet.remove(current);
+            List<GraphNode> adjacent = getAdjacentNodes(map, current.getNode());
+
+            // Find the adjacent node with the lowest heuristic cost.
+            for (GraphNode node : adjacent)
+                openSet.add(new WeightedNode(node, current));
+
+            // Exit search if done.
+            if (openSet.isEmpty() || false) // TODO:  Replace false with test for at target.
+                break;
+
+            // Find the next open node with the lowest cost.
+            WeightedNode next = openSet.get(0);
+            for (WeightedNode node : openSet) {
+                if (node.getCost() < next.getCost())
+                    next = node;
+            }
+            current = next;
+        }
+
+        // Collect the path.
+        List<GraphNode> path = new ArrayList<>();
+        while (current.getParent() != null) {
+            path.add(0, current.getNode());
+            current = current.getParent();
+        }
+
+        return path;
 	}
-	
+
+    private List<GraphNode> getAdjacentNodes(GraphNode map[][], GraphNode current) {
+        int x = current.x;
+        int y = current.y;
+        List<GraphNode> nodes = new ArrayList<>();
+        for (int i = Math.max(x - 1, 0); i < Math.min(x + 2, map.length); i++) {
+            for (int j = Math.max(y - 1, 0); j < Math.min(y + 2, map[i].length); j++) {
+                if (i == x && j == y)
+                    continue;
+                if (map[i][j] != null)
+                    nodes.add(map[i][j]);
+            }
+        }
+        return nodes;
+    }
+
 	@Override
-	public Map<Integer, Action> initialStep(StateView newstate, History.HistoryView statehistory) {
+	public Map<Integer, Action> initialStep(StateView newstate,
+			History.HistoryView statehistory) {
 		step = 0;
-		
+
 		List<Integer> unitIds = currentState.getUnitIds(playernum);
 		List<Integer> townhallIds = new ArrayList<Integer>();
 		List<Integer> footmanIds = new ArrayList<Integer>();
-		for(int i=0; i<unitIds.size(); i++) {
+		for (int i = 0; i < unitIds.size(); i++) {
 			int id = unitIds.get(i);
 			UnitView unit = currentState.getUnit(id);
 			String unitTypeName = unit.getTemplateView().getName();
 			System.out.println("Unit Type Name: " + unitTypeName);
-			if(unitTypeName.equals("TownHall"))
+			if (unitTypeName.equals("TownHall"))
 				townhallIds.add(id);
-			if(unitTypeName.equals("Footman"))
+			if (unitTypeName.equals("Footman"))
 				footmanIds.add(id);
 		}
-		
+
 		UnitView footman = currentState.getUnit(footmanIds.get(0));
 		UnitView townhall = currentState.getUnit(townhallIds.get(0));
-		
-		List<GraphNode> path = getPathToTownHall(currentState, footman, townhall);
-		
+
+		List<GraphNode> path = getPathToTownHall(currentState, footman,
+				townhall);
+
 		return middleStep(newstate, statehistory);
 	}
 
 	@Override
-	public Map<Integer,Action> middleStep(StateView newState, History.HistoryView statehistory) {
+	public Map<Integer, Action> middleStep(StateView newState,
+			History.HistoryView statehistory) {
 		step++;
-		
-		Map<Integer,Action> builder = new HashMap<Integer,Action>();
+
+		Map<Integer, Action> builder = new HashMap<Integer, Action>();
 		currentState = newState;
-				
+
 		return builder;
 	}
 
 	@Override
-	public void terminalStep(StateView newstate, History.HistoryView statehistory) {
+	public void terminalStep(StateView newstate,
+			History.HistoryView statehistory) {
 		step++;
-
 	}
-	
+
 	public static String getUsage() {
 		return "Naviagtes a footman to an enemy town hall";
 	}
+
 	@Override
 	public void savePlayerData(OutputStream os) {
-		//this agent lacks learning and so has nothing to persist.
-		
+		// this agent lacks learning and so has nothing to persist.
 	}
+
 	@Override
 	public void loadPlayerData(InputStream is) {
-		//this agent lacks learning and so has nothing to persist.
+		// this agent lacks learning and so has nothing to persist.
 	}
 }
