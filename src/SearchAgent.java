@@ -57,6 +57,7 @@ public class SearchAgent extends Agent {
 	private List<GraphNode> getPathToTownHall(StateView currentState,
 			UnitView footman, UnitView townhall) {
 
+        // Create the map, leaving occupied cells blank.
 		GraphNode nodeMap[][] = new GraphNode[currentState.getXExtent()][currentState
 				.getYExtent()];
 		for (int i = 0; i < currentState.getXExtent(); i++) {
@@ -69,8 +70,8 @@ public class SearchAgent extends Agent {
 		}
 
         // Get the nodes containing the our target and origin.
-        GraphNode target = null; // TODO: Replace with target's initial graphNode
-        GraphNode initial = null; // TODO: Replace with footman's initial graphNode
+        GraphNode initial = new GraphNode(footman.getXPosition(), footman.getYPosition());
+        GraphNode target = new GraphNode(townhall.getXPosition(), townhall.getYPosition());
         return getPathToTarget(nodeMap, initial, target);
     }
 
@@ -83,13 +84,17 @@ public class SearchAgent extends Agent {
         while (true) {
             openSet.remove(current);
             List<GraphNode> adjacent = getAdjacentNodes(map, current.getNode());
+            boolean targetAdjacent = false;
 
             // Find the adjacent node with the lowest heuristic cost.
-            for (GraphNode node : adjacent)
+            for (GraphNode node : adjacent) {
                 openSet.add(new WeightedNode(node, current));
+                if (node.x == target.x && node.y == target.y)
+                    targetAdjacent = true;
+            }
 
             // Exit search if done.
-            if (openSet.isEmpty() || false) // TODO:  Replace false with test for at target.
+            if (openSet.isEmpty() || targetAdjacent)
                 break;
 
             // Find the next open node with the lowest cost.
