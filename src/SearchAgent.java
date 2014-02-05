@@ -56,54 +56,47 @@ public class SearchAgent extends Agent {
     GraphNode footmanPosition = null;
 
     // calculate the path to the town hall using A* with the Chebyshev distance as a heuristic
-    private List<GraphNode> getPathToTownHall(StateView currentState,
-            UnitView footman, UnitView townhall) {
+    private List<GraphNode> getPathToTownHall(StateView currentState, UnitView footman, UnitView townhall) {
 
         // Create the map, leaving occupied cells blank.
-        GraphNode nodeMap[][] = new GraphNode[currentState.getXExtent()][currentState
-                .getYExtent()];
+        GraphNode nodeMap[][] = new GraphNode[currentState.getXExtent()][currentState.getYExtent()];
         for (int i = 0; i < currentState.getXExtent(); i++) {
             for (int j = 0; j < currentState.getYExtent(); j++) {
-                if (!currentState.isUnitAt(i, j)
-                        && !currentState.isResourceAt(i, j)) {
+                if (!currentState.isUnitAt(i, j) && !currentState.isResourceAt(i, j)) {
                     nodeMap[i][j] = new GraphNode(i, j);
                 }
             }
         }
 
         // Get the nodes containing the our target and origin.
-        GraphNode initial = new GraphNode(footman.getXPosition(),
-                footman.getYPosition());
-        GraphNode target = new GraphNode(townhall.getXPosition(),
-                townhall.getYPosition());
+        GraphNode initial = new GraphNode(footman.getXPosition(), footman.getYPosition());
+        GraphNode target = new GraphNode(townhall.getXPosition(), townhall.getYPosition());
         return getPathToTarget(nodeMap, initial, target);
     }
 
-    private List<GraphNode> getPathToTarget(GraphNode map[][],
-            GraphNode initial, GraphNode target) {
+    private List<GraphNode> getPathToTarget(GraphNode map[][], GraphNode initial, GraphNode target) {
         WeightedNode.target = new GraphNode(target.x, target.y);
         WeightedNode current = new WeightedNode(initial, null);
 
         // Search for the town hall.
         List<WeightedNode> openSet = new ArrayList<>();
         List<GraphNode> closedSet = new ArrayList<>();
-        System.out.println("Moving to node: " + current);
+//        System.out.println("Moving to node: " + current);
 
         while (true) {
             openSet.remove(current);
-            List<GraphNode> adjacent = getAdjacentNodes(map, current.getNode(),
-                    closedSet);
+            List<GraphNode> adjacent = getAdjacentNodes(map, current.getNode(), closedSet);
 
             // Find the adjacent node with the lowest heuristic cost.
             for (GraphNode node : adjacent) {
-                System.out.println("\tAdjacent Node: " + current);
+//                System.out.println("\tAdjacent Node: " + current);
                 openSet.add(new WeightedNode(node, current));
             }
 
             // Exit search if done.
             if (openSet.isEmpty()) {
-                System.out.printf("Target (%d, %d) is unreachable from position (%d, %d).\n",
-                                target.x, target.y, initial.x, initial.y);
+//                System.out.printf("Target (%d, %d) is unreachable from position (%d, %d).\n",
+//                                target.x, target.y, initial.x, initial.y);
                 return null;
             } else if (targetAdjacent(current)) {
                 break;
@@ -115,10 +108,11 @@ public class SearchAgent extends Agent {
             // Find the next open node with the lowest cost.
             WeightedNode next = openSet.get(0);
             for (WeightedNode node : openSet) {
-                if (node.getCost() < next.getCost())
+                if (node.getCost() < next.getCost()) {
                     next = node;
+                }
             }
-            System.out.println("Moving to node: " + current);
+//            System.out.println("Moving to node: " + current);
             current = next;
         }
 
@@ -137,26 +131,25 @@ public class SearchAgent extends Agent {
         int x = current.getNode().x;
         int y = current.getNode().y;
         GraphNode target = WeightedNode.target;
-        System.out.printf("Target is (%d, %d), currently at (%d, %d).\n",
-                target.x, target.y, x, y);
+//        System.out.printf("Target is (%d, %d), currently at (%d, %d).\n",
+//                target.x, target.y, x, y);
         for (int i = x - 1; i <= x + 1; i++) {
             for (int j = y - 1; j <= y + 1; j++) {
                 if (i == target.x && j == target.y) {
-                    System.out.printf("Target is adjacent!");
+//                    System.out.printf("Target is adjacent!");
                     return true;
                 }
             }
         }
-        System.out.printf("Target is not adjacent.");
+//        System.out.printf("Target is not adjacent.");
         return false;
     }
 
     // Returns all nodes that are reachable and adjacent to the current node
-    private List<GraphNode> getAdjacentNodes(GraphNode map[][],
-            GraphNode current, List<GraphNode> visited) {
+    private List<GraphNode> getAdjacentNodes(GraphNode map[][], GraphNode current, List<GraphNode> visited) {
         int x = current.x;
         int y = current.y;
-        System.out.printf("Searching for nodes adjacent to (%d, %d).\n", x, y);
+//        System.out.printf("Searching for nodes adjacent to (%d, %d).\n", x, y);
         List<GraphNode> nodes = new ArrayList<>();
         for (int i = Math.max(x - 1, 0); i < Math.min(x + 2, map.length); i++) {
             for (int j = Math.max(y - 1, 0); j < Math.min(y + 2, map[i].length); j++) {
@@ -164,14 +157,14 @@ public class SearchAgent extends Agent {
                     continue;
                 }
                 if (map[i][j] == null) {
-                    System.out.printf("Node (%d, %d) is occupied.\n", i, j);
+//                    System.out.printf("Node (%d, %d) is occupied.\n", i, j);
                     continue;
                 }
                 if (visited.contains(map[i][j])) {
-                    System.out.printf("Node (%d, %d) is already visited.\n", i, j);
+//                    System.out.printf("Node (%d, %d) is already visited.\n", i, j);
                     continue;
                 }
-                System.out.printf("Node (%d, %d) is valid and adjacent!\n", i, j);
+//                System.out.printf("Node (%d, %d) is valid and adjacent!\n", i, j);
                 nodes.add(map[i][j]);
             }
         }
@@ -215,7 +208,6 @@ public class SearchAgent extends Agent {
             int id = unitIds.get(i);
             UnitView unit = currentState.getUnit(id);
             String unitTypeName = unit.getTemplateView().getName();
-            System.out.println("Unit Type Name: " + unitTypeName);
             if (unitTypeName.equals("TownHall"))
                 townhallIds.add(id);
             if (unitTypeName.equals("Footman"))
@@ -240,8 +232,7 @@ public class SearchAgent extends Agent {
     }
 
     @Override
-    public Map<Integer, Action> middleStep(StateView newState,
-            History.HistoryView statehistory) {
+    public Map<Integer, Action> middleStep(StateView newState, History.HistoryView statehistory) {
         step++;
 
         Map<Integer, Action> builder = new HashMap<Integer, Action>();
@@ -274,8 +265,7 @@ public class SearchAgent extends Agent {
     }
 
     @Override
-    public void terminalStep(StateView newstate,
-            History.HistoryView statehistory) {
+    public void terminalStep(StateView newstate, History.HistoryView statehistory) {
         step++;
     }
 
