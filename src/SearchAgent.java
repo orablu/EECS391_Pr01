@@ -101,8 +101,13 @@ public class SearchAgent extends Agent {
             }
 
             // Exit search if done.
-            if (openSet.isEmpty() || targetAdjacent(current))
+            if (openSet.isEmpty()) {
+                System.out.printf("Target (%d, %d) is unreachable from position (%d, %d).\n",
+                                target.x, target.y, initial.x, initial.y);
+                return null;
+            } else if (targetAdjacent(current)) {
                 break;
+            }
 
             // This node has been explored now.
             closedSet.add(current.getNode());
