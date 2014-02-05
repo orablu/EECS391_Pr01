@@ -95,8 +95,8 @@ public class SearchAgent extends Agent {
 
             // Exit search if done.
             if (openSet.isEmpty()) {
-//                System.out.printf("Target (%d, %d) is unreachable from position (%d, %d).\n",
-//                                target.x, target.y, initial.x, initial.y);
+                System.out.printf("Target (%d, %d) is unreachable from position (%d, %d).\n",
+                                target.x, target.y, initial.x, initial.y);
                 return null;
             } else if (targetAdjacent(current)) {
                 break;
@@ -220,8 +220,13 @@ public class SearchAgent extends Agent {
         footmanPosition = new GraphNode(footman.getXPosition(), footman.getYPosition());
 
         // find the path to the town hall
-        path = getPathToTownHall(currentState, footman,
-                townhall);
+        path = getPathToTownHall(currentState, footman, townhall);
+        
+        if (path == null || path.isEmpty()) {
+        	System.out.printf("Target (%d, %d) is unreachable from position (%d, %d).\n",
+        			townhall.getXPosition(), townhall.getYPosition(), footman.getXPosition(), footman.getYPosition());
+        	System.exit(0);
+        }
         
         System.out.println("Path Nodes:");
         for (GraphNode node : path) {
