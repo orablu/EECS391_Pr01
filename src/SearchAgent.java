@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import edu.cwru.sepia.action.Action;
 import edu.cwru.sepia.agent.Agent;
@@ -43,21 +42,20 @@ import edu.cwru.sepia.util.Direction;
  */
 public class SearchAgent extends Agent {
     private static final long serialVersionUID = -4047208702628325380L;
-    private static final Logger logger = Logger.getLogger(SearchAgent.class
-            .getCanonicalName());
 
     private int step;
 
     public SearchAgent(int playernum, String[] arguments) {
         super(playernum);
-
     }
 
     List<GraphNode> path = new ArrayList<GraphNode>();
     StateView currentState;
     UnitView footman = null;
     UnitView townhall = null;
+    GraphNode footmanPosition = null;
 
+    // calculate the path to the town hall using A* with the Chebyshev distance as a heuristic
     private List<GraphNode> getPathToTownHall(StateView currentState,
             UnitView footman, UnitView townhall) {
 
@@ -106,7 +104,7 @@ public class SearchAgent extends Agent {
             if (openSet.isEmpty() || targetAdjacent(current))
                 break;
 
-            // This node has been explred now.
+            // This node has been explored now.
             closedSet.add(current.getNode());
 
             // Find the next open node with the lowest cost.
@@ -129,6 +127,7 @@ public class SearchAgent extends Agent {
         return path;
     }
 
+    // Returns true if the target is adjacent to the given node
     private boolean targetAdjacent(WeightedNode current) {
         int x = current.getNode().x;
         int y = current.getNode().y;
@@ -147,6 +146,7 @@ public class SearchAgent extends Agent {
         return false;
     }
 
+    // Returns all nodes that are reachable and adjacent to the current node
     private List<GraphNode> getAdjacentNodes(GraphNode map[][],
             GraphNode current, List<GraphNode> visited) {
         int x = current.x;
@@ -176,19 +176,19 @@ public class SearchAgent extends Agent {
     private Direction getDirection(int x, int y) {
         if (x == 1 && y == 0) {
             return Direction.EAST;
-        } else if (x == 1 && y == 1) {
+        } else if (x == 1 && y == -1) {
             return Direction.NORTHEAST;
-        } else if (x == 0 && y == 1) {
+        } else if (x == 0 && y == -1) {
             return Direction.NORTH;
-        } else if (x == -1 && y == 1) {
+        } else if (x == -1 && y == -1) {
             return Direction.NORTHWEST;
         } else if (x == -1 && y == 0) {
             return Direction.WEST;
-        } else if (x == -1 && y == -1) {
+        } else if (x == -1 && y == 1) {
             return Direction.SOUTHWEST;
-        } else if (x == 0 && y == -1) {
+        } else if (x == 0 && y == 1) {
             return Direction.SOUTH;
-        } else if (x == 1 && y == -1) {
+        } else if (x == 1 && y == 1) {
             return Direction.SOUTHEAST;
         } else {
             System.out.println("Something bad happened while calculating direction");
@@ -202,6 +202,7 @@ public class SearchAgent extends Agent {
         step = 0;
         currentState = newstate;
 
+        // Find the footman and town hall
         List<Integer> unitIds = currentState.getAllUnitIds();
         List<Integer> townhallIds = new ArrayList<Integer>();
         List<Integer> footmanIds = new ArrayList<Integer>();
@@ -218,7 +219,10 @@ public class SearchAgent extends Agent {
 
         footman = currentState.getUnit(footmanIds.get(0));
         townhall = currentState.getUnit(townhallIds.get(0));
+        
+        footmanPosition = new GraphNode(footman.getXPosition(), footman.getYPosition());
 
+        // find the path to the town hall
         path = getPathToTownHall(currentState, footman,
                 townhall);
         
@@ -238,12 +242,28 @@ public class SearchAgent extends Agent {
         Map<Integer, Action> builder = new HashMap<Integer, Action>();
         currentState = newState;
         
-        GraphNode nextNode = path.remove(0);
-        Direction direction = getDirection(nextNode.x - footman.getXPosition(), nextNode.y - footman.getYPosition());
-        Action b = Action.createPrimitiveMove(footman.getID(), direction);
+        // We have reached the destination!
+        if (path.size() == 0) {
+        	System.out.println("Attacking!");
+        	Action b = Action.createPrimitiveAttack(footman.getID(), townhall.getID());
+        	builder.put(footman.getID(), b);
+        	return builder;
+        }
         
+        GraphNode nextNode = path.remove(0);
+        
+//        System.out.println("Footman is at " + footmanPosition.x + "," + footmanPosition.y);
+//        System.out.println("Footman is moving to " + nextNode.x + "," + nextNode.y);
+        
+        // Find the direction to the next square on the map
+        Direction direction = getDirection(nextNode.x - footmanPosition.x, nextNode.y - footmanPosition.y);
         System.out.println("Moving: " + direction);
+        
+        Action b = Action.createPrimitiveMove(footman.getID(), direction);
         builder.put(footman.getID(), b);
+        
+        footmanPosition.x = nextNode.x;
+        footmanPosition.y = nextNode.y;
 
         return builder;
     }
